@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { createHttpStore } from '$lib/http/store';
 	import { user } from '$lib/auth/store'
-	import { dataset_dev } from 'svelte/internal';
 
 	interface Project {
 		name: string
@@ -16,6 +15,9 @@
 
 	projectStore.get("/projects")
 
+	function handleLogin() {
+		logoutStore.get("/login")
+	}
 	function handleLogout() {
 		logoutStore.get("/logout")
 	}
@@ -39,4 +41,5 @@
 {/if}
 
 
+<button on:click={handleLogin}>Login</button>
 <button on:click={handleLogout}>Logout</button>

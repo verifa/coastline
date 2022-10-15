@@ -4,23 +4,15 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/verifa/coastline/ent"
+	"github.com/verifa/coastline/store"
+
 	"github.com/go-chi/chi/v5"
 )
 
-var projects = []project{
-	{
-		Name: "project-1",
-	},
-	{
-		Name: "project-2",
-	},
+type projectsServer struct {
+	store *store.Store
 }
-
-type project struct {
-	Name string `json:"name"`
-}
-
-type projectsServer struct{}
 
 func (p projectsServer) Routes() chi.Router {
 	r := chi.NewRouter()
@@ -46,8 +38,13 @@ func (p projectsServer) List(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
+	projects, err := p.store.QueryProjects()
+	if err != nil {
+		http.Error(w, "Querying projects: "+err.Error(), http.StatusInternalServerError)
+	}
+
 	data := struct {
-		Projects []project `json:"projects"`
+		Projects []*ent.Project `json:"projects"`
 	}{
 		Projects: projects,
 	}

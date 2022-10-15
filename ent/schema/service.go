@@ -8,11 +8,11 @@ import (
 	"github.com/google/uuid"
 )
 
-type Project struct {
+type Service struct {
 	ent.Schema
 }
 
-func (Project) Fields() []ent.Field {
+func (Service) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New),
@@ -20,13 +20,13 @@ func (Project) Fields() []ent.Field {
 	}
 }
 
-func (Project) Edges() []ent.Edge {
+func (Service) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("Requests", Request.Type).Ref("Project"),
+		edge.From("Requests", Request.Type).Ref("Service"),
 	}
 }
 
-func (Project) Indexes() []ent.Index {
+func (Service) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("id").
 			Unique(),

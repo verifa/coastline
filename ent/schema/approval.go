@@ -8,25 +8,26 @@ import (
 	"github.com/google/uuid"
 )
 
-type Project struct {
+type Approval struct {
 	ent.Schema
 }
 
-func (Project) Fields() []ent.Field {
+func (Approval) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New),
-		field.String("name").NotEmpty().Unique(),
+		field.Bool("is_automated").Default(false),
+		field.String("approver").NotEmpty(),
 	}
 }
 
-func (Project) Edges() []ent.Edge {
+func (Approval) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("Requests", Request.Type).Ref("Project"),
+		edge.To("Request", Request.Type).Required(),
 	}
 }
 
-func (Project) Indexes() []ent.Index {
+func (Approval) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("id").
 			Unique(),

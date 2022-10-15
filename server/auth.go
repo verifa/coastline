@@ -72,14 +72,14 @@ func (p authProvider) authorizeMiddleware(next http.Handler) http.Handler {
 			http.Error(w, "no session: "+err.Error(), http.StatusUnauthorized)
 			return
 		}
-		allow, err := p.police.EvaluateLoginRequest(session.UserInfo)
-		if err != nil {
-			http.Error(w, "Error enforcing login policies: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if !allow {
-			http.Error(w, "Forbidden access", http.StatusForbidden)
-		}
+		// allow, err := p.police.EvaluateLoginRequest(session.UserInfo)
+		// if err != nil {
+		// 	http.Error(w, "Error enforcing login policies: "+err.Error(), http.StatusInternalServerError)
+		// 	return
+		// }
+		// if !allow {
+		// 	http.Error(w, "Forbidden access", http.StatusForbidden)
+		// }
 
 		ctx := context.WithValue(r.Context(), contextKey, session)
 		r = r.WithContext(ctx)
@@ -185,19 +185,6 @@ func (p authProvider) handleAuthCallback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// resp := struct {
-	// 	OAuth2Token *oauth2.Token
-	// 	UserInfo    *oidc.UserInfo
-	// 	Claims      []byte
-	// }{oauth2Token, userInfo, claims}
-	// data, err := json.MarshalIndent(resp, "", "    ")
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
-	// w.Write(data)
-
-	// p.sessionManager.
 	p.sessioner.NewSession(w, idToken, userInfo)
 	http.Redirect(w, r, "http://localhost:5173/", http.StatusSeeOther)
 }

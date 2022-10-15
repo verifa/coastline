@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { onMount, setContext } from 'svelte';
+	import { onMount } from 'svelte';
 	
 
 	import {user} from '$lib/auth/store';
@@ -20,9 +20,10 @@
                 user.set(resp.data.user)
             } else if (!resp.error) {
                 if (resp.status === 401) {
-                    if (isLoginPage()) {
-                        goto("/login")
-                    }
+                    console.log("walalalalalal")
+                    // if (!isLoginPage()) {
+                    //     goto("/login")
+                    // }
                 }
             }
         })
@@ -42,4 +43,5 @@
 	<slot/>
 {:else if isLoginPage()}
 	<slot/>
-{/if}
+    {/if}
+	<slot/>
