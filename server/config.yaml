@@ -1,0 +1,6 @@
+package: oapi
+generate:
+  models: true
+  chi-server: true
+  embedded-spec: true
+output: ./oapi/oapi.gen.go

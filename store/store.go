@@ -35,6 +35,10 @@ type Store struct {
 	ctx    context.Context
 }
 
+func (s *Store) Client() *ent.Client {
+	return s.client
+}
+
 func (s *Store) Close() error {
 	return s.client.Close()
 }

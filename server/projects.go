@@ -4,76 +4,42 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/verifa/coastline/ent"
-	"github.com/verifa/coastline/store"
-
-	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	"github.com/verifa/coastline/ent/project"
+	"github.com/verifa/coastline/server/oapi"
 )
 
-type projectsServer struct {
-	store *store.Store
-}
-
-func (p projectsServer) Routes() chi.Router {
-	r := chi.NewRouter()
-
-	r.Get("/", p.List)    // GET /projects - read a list of projects
-	r.Post("/", p.Create) // POST /projects - create a new project and pepist it
-	r.Put("/", p.Delete)
-
-	r.Route("/{id}", func(r chi.Router) {
-		r.Get("/", p.Get)       // GET /projects/{id} - read a single project by :id
-		r.Put("/", p.Update)    // PUT /projects/{id} - update a single project by :id
-		r.Delete("/", p.Delete) // DELETE /projects/{id} - delete a single project by :id
-		r.Get("/sync", p.Sync)
-	})
-
-	return r
-}
-
-func (p projectsServer) List(w http.ResponseWriter, r *http.Request) {
-	// session, ok := r.Context().Value(contextKey).(Session)
-	// if !ok {
-	// 	http.Error(w, "Cannot get user from session context...", http.StatusInternalServerError)
-	// 	return
-	// }
-
-	projects, err := p.store.QueryProjects()
+func (s *ServerImpl) GetProjects(w http.ResponseWriter, r *http.Request, params oapi.GetProjectsParams) {
+	resp, err := s.store.QueryProjects()
 	if err != nil {
 		http.Error(w, "Querying projects: "+err.Error(), http.StatusInternalServerError)
 	}
+	returnJSON(w, resp)
+}
 
-	data := struct {
-		Projects []*ent.Project `json:"projects"`
-	}{
-		Projects: projects,
-	}
-
-	projectsJSON, err := json.Marshal(data)
-	if err != nil {
-		http.Error(w, "Creating JSON from projects", http.StatusInternalServerError)
+func (s *ServerImpl) CreateProject(w http.ResponseWriter, r *http.Request) {
+	var req oapi.NewProject
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Decoding request body: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	w.Header().Set("Content-Type", "text/json; charset=utf-8")
-	w.Write(projectsJSON)
+	project, err := s.store.CreateProject(&req)
+	if err != nil {
+		http.Error(w, "Creating project: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	returnJSON(w, project)
 }
 
-func (p projectsServer) Create(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("projects create"))
-}
-
-func (p projectsServer) Get(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("project get"))
-}
-
-func (p projectsServer) Update(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("project update"))
-}
-
-func (p projectsServer) Delete(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("project delete"))
-}
-
-func (p projectsServer) Sync(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("project sync"))
+func (s *ServerImpl) GetProjectByID(w http.ResponseWriter, r *http.Request, id uuid.UUID) {
+	resp, err := s.store.QueryProjects(project.ID(uuid.UUID(id)))
+	if err != nil {
+		http.Error(w, "Quering projects: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if len(resp.Projects) == 0 {
+		http.Error(w, "Project not found", http.StatusNotFound)
+		return
+	}
+	returnJSON(w, resp.Projects[0])
 }

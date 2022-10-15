@@ -65,7 +65,7 @@ type authProvider struct {
 	police    *PolicyEngine
 }
 
-func (p authProvider) authorizeMiddleware(next http.Handler) http.Handler {
+func (p authProvider) authenticateMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		session, err := p.sessioner.AuthorizeSession(r)
 		if err != nil {

@@ -1,4 +1,4 @@
-package api
+package cuehack
 
 #Project: {
 	name: =~"[A-Za-z0-9-].*"

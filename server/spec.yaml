@@ -1,0 +1,291 @@
+openapi: "3.1.0"
+info:
+  version: 1.0.0
+  title: Coastline
+  description: "TODO: Coastline self-service"
+  contact:
+    name: Verifa Crew
+    email: support@verifa.io
+    url: https://verifa.io
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+# servers:
+#   - url: http://petstore.swagger.io/api
+paths:
+  #
+  # Projects
+  #
+  /projects:
+    get:
+      description: |
+        Return a list of projects
+      operationId: getProjects
+      parameters:
+        - name: name
+          in: query
+          description: name to filter by
+          required: false
+          style: form
+          schema:
+            type: array
+            items:
+              type: string
+        - name: limit
+          in: query
+          description: maximum number of results to return
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: project response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectsResp"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      description: Creates a new project
+      operationId: createProject
+      requestBody:
+        description: Project to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewProject"
+      responses:
+        "200":
+          description: project response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /projects/{id}:
+    get:
+      description: Returns a project by ID
+      operationId: getProjectByID
+      parameters:
+        - name: id
+          in: path
+          description: ID of project to fetch
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: uuid.UUID
+            x-go-type-import:
+              path: github.com/google/uuid
+      responses:
+        "200":
+          description: project response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  #
+  # Services
+  #
+  /services:
+    get:
+      description: |
+        Return a list of services
+      operationId: getServices
+      parameters:
+        - name: name
+          in: query
+          description: name to filter by
+          required: false
+          style: form
+          schema:
+            type: array
+            items:
+              type: string
+        - name: limit
+          in: query
+          description: maximum number of results to return
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: service response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServicesResp"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      description: Creates a new service
+      operationId: createService
+      requestBody:
+        description: Service to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewService"
+      responses:
+        "200":
+          description: service response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /services/{id}:
+    get:
+      description: Returns a service by ID
+      operationId: getServiceByID
+      parameters:
+        - name: id
+          in: path
+          description: ID of service to fetch
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: uuid.UUID
+            x-go-type-import:
+              path: github.com/google/uuid
+      responses:
+        "200":
+          description: service response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  #   delete:
+  #     description: deletes a single pet based on the ID supplied
+  #     operationId: deletePet
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         description: ID of pet to delete
+  #         required: true
+  #         schema:
+  #           type: integer
+  #           format: int64
+  #     responses:
+  #       "204":
+  #         description: pet deleted
+  #       default:
+  #         description: unexpected error
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    #
+    # Project types
+    #
+    Project:
+      allOf:
+        - $ref: "#/components/schemas/NewProject"
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+              format: uuid
+              x-go-type: uuid.UUID
+              x-go-type-import:
+                path: github.com/google/uuid
+    NewProject:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+    ProjectsResp:
+      type: object
+      required:
+        - projects
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+    #
+    # Service types
+    #
+    Service:
+      allOf:
+        - $ref: "#/components/schemas/NewService"
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+              format: uuid
+              x-go-type: uuid.UUID
+              x-go-type-import:
+                path: github.com/google/uuid
+    NewService:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+    ServicesResp:
+      type: object
+      required:
+        - services
+      properties:
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/Service"
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string

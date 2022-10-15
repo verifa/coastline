@@ -3,11 +3,11 @@
 
 	const loginStore = createHttpStore()
 
-	function handleLogin() {
-		loginStore.get("/login")
-	}
+	// function handleLogin() {
+	// 	loginStore.get("/login")
+	// }
 </script>
 
 <h1>Login</h1>
 
-<button on:click={handleLogin}>Login</button>
+<a href="http://localhost:3000/api/v1/login">Login</a>
