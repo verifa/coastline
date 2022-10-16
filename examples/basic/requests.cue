@@ -1,7 +1,7 @@
 package basic
 
 #Request: #ArtifactoryRepoRequest | #JenkinsServerRequest
-request:  #Request
+// request:  #Request
 
 #BaseRequest: {
 	project_id:   string

@@ -6,7 +6,15 @@ import (
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/load"
 	"cuelang.org/go/encoding/gocode/gocodec"
+	"github.com/verifa/coastline/server/oapi"
 )
+
+func DefaultRequestsEngineConfig() RequestsEngineConfig {
+	return RequestsEngineConfig{
+		Module:     "github.com/verifa/coastline/examples/basic",
+		ModuleRoot: "./examples/basic",
+	}
+}
 
 type RequestsEngineConfig struct {
 	Module     string
@@ -16,8 +24,8 @@ type RequestsEngineConfig struct {
 // RequestsEngine is responsible for storing all the requests, validting incoming
 // requets, and providing the frontend with request specs
 type RequestsEngine struct {
-	codec    *gocodec.Codec
-	instance *cue.Instance
+	codec *gocodec.Codec
+	value cue.Value
 }
 
 func NewRequestsEngine(config *RequestsEngineConfig) (*RequestsEngine, error) {
@@ -41,14 +49,19 @@ func NewRequestsEngine(config *RequestsEngineConfig) (*RequestsEngine, error) {
 		return nil, fmt.Errorf("building instance: %w", buildInstance.Err)
 	}
 
+	// Get the Request definition from the provided cue model, which we will
+	// use for validation
+	cueRequestPath := cue.MakePath(cue.Def("Request"))
+	requestDef := instance.Value().LookupPath(cueRequestPath)
+
 	codec := gocodec.New(r, nil)
 
 	return &RequestsEngine{
-		codec:    codec,
-		instance: instance,
+		codec: codec,
+		value: requestDef,
 	}, nil
 }
 
-func (e *RequestsEngine) Validate(input interface{}) error {
-	return e.codec.Validate(e.instance.Value(), input)
+func (e *RequestsEngine) Validate(input oapi.NewRequest) error {
+	return e.codec.Validate(e.value, input)
 }

@@ -26,6 +26,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var serverConfig = server.DefaultConfig()
+
 // serverCmd represents the server command
 var serverCmd = &cobra.Command{
 	Use:   "server",
@@ -43,7 +45,7 @@ to quickly create a Cobra application.`,
 			return fmt.Errorf("creating store: %w", err)
 		}
 
-		srv, err := server.New(ctx, store)
+		srv, err := server.New(ctx, store, &serverConfig)
 		if err != nil {
 			return fmt.Errorf("creating server: %w", err)
 		}

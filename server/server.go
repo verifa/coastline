@@ -14,7 +14,25 @@ import (
 	"github.com/go-chi/cors"
 )
 
-func New(ctx context.Context, store *store.Store) (*chi.Mux, error) {
+type Config struct {
+	RequestsEngine RequestsEngineConfig
+}
+
+func DefaultConfig() Config {
+	return Config{
+		RequestsEngine: DefaultRequestsEngineConfig(),
+	}
+}
+
+func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, error) {
+
+	if config == nil {
+		return nil, fmt.Errorf("config is required")
+	}
+	engine, err := NewRequestsEngine(&config.RequestsEngine)
+	if err != nil {
+		return nil, fmt.Errorf("creating requests engine: %w", err)
+	}
 
 	provider, err := newAuthProvider(ctx)
 	if err != nil {
@@ -59,8 +77,12 @@ func New(ctx context.Context, store *store.Store) (*chi.Mux, error) {
 	// 	},
 	// })
 
+	serverImpl := ServerImpl{
+		store:  store,
+		engine: engine,
+	}
 	wrapper := oapi.ServerInterfaceWrapper{
-		Handler: &ServerImpl{store: store},
+		Handler: &serverImpl,
 	}
 
 	// The handler produced by oapi-codegen is not very helpful when wanting to
@@ -102,7 +124,8 @@ func New(ctx context.Context, store *store.Store) (*chi.Mux, error) {
 var _ oapi.ServerInterface = (*ServerImpl)(nil)
 
 type ServerImpl struct {
-	store *store.Store
+	store  *store.Store
+	engine *RequestsEngine
 }
 
 func returnJSON(w http.ResponseWriter, obj interface{}) {
