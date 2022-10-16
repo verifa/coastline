@@ -4,13 +4,13 @@ package enttest
 
 import (
 	"context"
+
 	"github.com/verifa/coastline/ent"
 	// required by schema hooks.
 	_ "github.com/verifa/coastline/ent/runtime"
 
-	"github.com/verifa/coastline/ent/migrate"
-
 	"entgo.io/ent/dialect/sql/schema"
+	"github.com/verifa/coastline/ent/migrate"
 )
 
 type (

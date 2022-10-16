@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/verifa/coastline/ent/migrate"
 
 	"github.com/verifa/coastline/ent/approval"
@@ -18,7 +19,6 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/google/uuid"
 )
 
 // Client is the client that holds all ent builders.
@@ -345,7 +345,7 @@ func (c *ProjectClient) QueryRequests(pr *Project) *RequestQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(project.Table, project.FieldID, id),
 			sqlgraph.To(request.Table, request.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, project.RequestsTable, project.RequestsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, true, project.RequestsTable, project.RequestsColumn),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil
@@ -451,7 +451,7 @@ func (c *RequestClient) QueryProject(r *Request) *ProjectQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(request.Table, request.FieldID, id),
 			sqlgraph.To(project.Table, project.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, request.ProjectTable, request.ProjectPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, false, request.ProjectTable, request.ProjectColumn),
 		)
 		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
 		return fromV, nil
@@ -467,7 +467,7 @@ func (c *RequestClient) QueryService(r *Request) *ServiceQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(request.Table, request.FieldID, id),
 			sqlgraph.To(service.Table, service.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, request.ServiceTable, request.ServicePrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, false, request.ServiceTable, request.ServiceColumn),
 		)
 		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
 		return fromV, nil
@@ -589,7 +589,7 @@ func (c *ServiceClient) QueryRequests(s *Service) *RequestQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(service.Table, service.FieldID, id),
 			sqlgraph.To(request.Table, request.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, service.RequestsTable, service.RequestsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, true, service.RequestsTable, service.RequestsColumn),
 		)
 		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
 		return fromV, nil

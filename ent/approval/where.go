@@ -3,11 +3,10 @@
 package approval
 
 import (
-	"github.com/verifa/coastline/ent/predicate"
-
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.

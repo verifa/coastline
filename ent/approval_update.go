@@ -6,14 +6,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/verifa/coastline/ent/approval"
-	"github.com/verifa/coastline/ent/predicate"
-	"github.com/verifa/coastline/ent/request"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/ent/approval"
+	"github.com/verifa/coastline/ent/predicate"
+	"github.com/verifa/coastline/ent/request"
 )
 
 // ApprovalUpdate is the builder for updating Approval entities.

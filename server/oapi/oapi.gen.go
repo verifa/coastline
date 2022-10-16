@@ -30,6 +30,15 @@ type NewProject struct {
 	Name string `json:"name"`
 }
 
+// NewRequest defines model for NewRequest.
+type NewRequest struct {
+	ProjectId   uuid.UUID              `json:"project_id"`
+	RequestedBy string                 `json:"requested_by"`
+	ServiceId   uuid.UUID              `json:"service_id"`
+	Spec        map[string]interface{} `json:"spec"`
+	Type        string                 `json:"type"`
+}
+
 // NewService defines model for NewService.
 type NewService struct {
 	Name string `json:"name"`
@@ -44,6 +53,21 @@ type Project struct {
 // ProjectsResp defines model for ProjectsResp.
 type ProjectsResp struct {
 	Projects []Project `json:"projects"`
+}
+
+// Request defines model for Request.
+type Request struct {
+	Id          uuid.UUID              `json:"id"`
+	ProjectId   uuid.UUID              `json:"project_id"`
+	RequestedBy string                 `json:"requested_by"`
+	ServiceId   uuid.UUID              `json:"service_id"`
+	Spec        map[string]interface{} `json:"spec"`
+	Type        string                 `json:"type"`
+}
+
+// RequestsResp defines model for RequestsResp.
+type RequestsResp struct {
+	Requests []Request `json:"requests"`
 }
 
 // Service defines model for Service.
@@ -69,6 +93,18 @@ type GetProjectsParams struct {
 // CreateProjectJSONBody defines parameters for CreateProject.
 type CreateProjectJSONBody = NewProject
 
+// GetRequestsParams defines parameters for GetRequests.
+type GetRequestsParams struct {
+	// name to filter by
+	Name *[]string `form:"name,omitempty" json:"name,omitempty"`
+
+	// maximum number of results to return
+	Limit *int32 `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// CreateRequestJSONBody defines parameters for CreateRequest.
+type CreateRequestJSONBody = NewRequest
+
 // GetServicesParams defines parameters for GetServices.
 type GetServicesParams struct {
 	// name to filter by
@@ -84,6 +120,9 @@ type CreateServiceJSONBody = NewService
 // CreateProjectJSONRequestBody defines body for CreateProject for application/json ContentType.
 type CreateProjectJSONRequestBody = CreateProjectJSONBody
 
+// CreateRequestJSONRequestBody defines body for CreateRequest for application/json ContentType.
+type CreateRequestJSONRequestBody = CreateRequestJSONBody
+
 // CreateServiceJSONRequestBody defines body for CreateService for application/json ContentType.
 type CreateServiceJSONRequestBody = CreateServiceJSONBody
 
@@ -98,6 +137,15 @@ type ServerInterface interface {
 
 	// (GET /projects/{id})
 	GetProjectByID(w http.ResponseWriter, r *http.Request, id uuid.UUID)
+
+	// (GET /requests)
+	GetRequests(w http.ResponseWriter, r *http.Request, params GetRequestsParams)
+
+	// (POST /requests)
+	CreateRequest(w http.ResponseWriter, r *http.Request)
+
+	// (GET /requests/{id})
+	GetRequestByID(w http.ResponseWriter, r *http.Request, id uuid.UUID)
 
 	// (GET /services)
 	GetServices(w http.ResponseWriter, r *http.Request, params GetServicesParams)
@@ -192,6 +240,89 @@ func (siw *ServerInterfaceWrapper) GetProjectByID(w http.ResponseWriter, r *http
 
 	var handler = func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetProjectByID(w, r, id)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
+}
+
+// GetRequests operation middleware
+func (siw *ServerInterfaceWrapper) GetRequests(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetRequestsParams
+
+	// ------------- Optional query parameter "name" -------------
+	if paramValue := r.URL.Query().Get("name"); paramValue != "" {
+
+	}
+
+	err = runtime.BindQueryParameter("form", true, false, "name", r.URL.Query(), &params.Name)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+	if paramValue := r.URL.Query().Get("limit"); paramValue != "" {
+
+	}
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRequests(w, r, params)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
+}
+
+// CreateRequest operation middleware
+func (siw *ServerInterfaceWrapper) CreateRequest(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRequest(w, r)
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(ctx))
+}
+
+// GetRequestByID operation middleware
+func (siw *ServerInterfaceWrapper) GetRequestByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id uuid.UUID
+
+	err = runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRequestByID(w, r, id)
 	}
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -407,6 +538,15 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/projects/{id}", wrapper.GetProjectByID)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/requests", wrapper.GetRequests)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/requests", wrapper.CreateRequest)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/requests/{id}", wrapper.GetRequestByID)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/services", wrapper.GetServices)
 	})
 	r.Group(func(r chi.Router) {
@@ -422,21 +562,24 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"K9VW7kRWx9U/VfV/AAAA//8Ai7/LwBwAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

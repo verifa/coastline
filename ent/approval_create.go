@@ -6,12 +6,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/verifa/coastline/ent/approval"
-	"github.com/verifa/coastline/ent/request"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/ent/approval"
+	"github.com/verifa/coastline/ent/request"
 )
 
 // ApprovalCreate is the builder for creating a Approval entity.

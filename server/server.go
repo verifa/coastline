@@ -87,6 +87,12 @@ func New(ctx context.Context, store *store.Store) (*chi.Mux, error) {
 			r.Get("/services", wrapper.GetServices)
 			r.Post("/services", wrapper.CreateService)
 			r.Post("/services/{id}", wrapper.GetServiceByID)
+			//
+			// Requests
+			//
+			r.Get("/requests", wrapper.GetRequests)
+			r.Post("/requests", wrapper.CreateRequest)
+			r.Post("/requests/{id}", wrapper.GetRequestByID)
 		})
 	})
 

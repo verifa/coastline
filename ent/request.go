@@ -3,12 +3,16 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/verifa/coastline/ent/request"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/ent/project"
+	"github.com/verifa/coastline/ent/request"
+	"github.com/verifa/coastline/ent/schema"
+	"github.com/verifa/coastline/ent/service"
 )
 
 // Request is the model entity for the Request schema.
@@ -16,19 +20,25 @@ type Request struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// Name holds the value of the "name" field.
-	Name string `json:"name,omitempty"`
+	// Type holds the value of the "type" field.
+	Type string `json:"type,omitempty"`
+	// RequestedBy holds the value of the "requested_by" field.
+	RequestedBy string `json:"requested_by,omitempty"`
+	// Spec holds the value of the "spec" field.
+	Spec schema.RequestSpec `json:"spec,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RequestQuery when eager-loading is set.
-	Edges RequestEdges `json:"edges"`
+	Edges           RequestEdges `json:"edges"`
+	request_project *uuid.UUID
+	request_service *uuid.UUID
 }
 
 // RequestEdges holds the relations/edges for other nodes in the graph.
 type RequestEdges struct {
 	// Project holds the value of the Project edge.
-	Project []*Project `json:"Project,omitempty"`
+	Project *Project `json:"Project,omitempty"`
 	// Service holds the value of the Service edge.
-	Service []*Service `json:"Service,omitempty"`
+	Service *Service `json:"Service,omitempty"`
 	// Approvals holds the value of the Approvals edge.
 	Approvals []*Approval `json:"Approvals,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -37,18 +47,26 @@ type RequestEdges struct {
 }
 
 // ProjectOrErr returns the Project value or an error if the edge
-// was not loaded in eager-loading.
-func (e RequestEdges) ProjectOrErr() ([]*Project, error) {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RequestEdges) ProjectOrErr() (*Project, error) {
 	if e.loadedTypes[0] {
+		if e.Project == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: project.Label}
+		}
 		return e.Project, nil
 	}
 	return nil, &NotLoadedError{edge: "Project"}
 }
 
 // ServiceOrErr returns the Service value or an error if the edge
-// was not loaded in eager-loading.
-func (e RequestEdges) ServiceOrErr() ([]*Service, error) {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RequestEdges) ServiceOrErr() (*Service, error) {
 	if e.loadedTypes[1] {
+		if e.Service == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: service.Label}
+		}
 		return e.Service, nil
 	}
 	return nil, &NotLoadedError{edge: "Service"}
@@ -68,10 +86,16 @@ func (*Request) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case request.FieldName:
+		case request.FieldSpec:
+			values[i] = new([]byte)
+		case request.FieldType, request.FieldRequestedBy:
 			values[i] = new(sql.NullString)
 		case request.FieldID:
 			values[i] = new(uuid.UUID)
+		case request.ForeignKeys[0]: // request_project
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case request.ForeignKeys[1]: // request_service
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Request", columns[i])
 		}
@@ -93,11 +117,39 @@ func (r *Request) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				r.ID = *value
 			}
-		case request.FieldName:
+		case request.FieldType:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field name", values[i])
+				return fmt.Errorf("unexpected type %T for field type", values[i])
 			} else if value.Valid {
-				r.Name = value.String
+				r.Type = value.String
+			}
+		case request.FieldRequestedBy:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field requested_by", values[i])
+			} else if value.Valid {
+				r.RequestedBy = value.String
+			}
+		case request.FieldSpec:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field spec", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &r.Spec); err != nil {
+					return fmt.Errorf("unmarshal field spec: %w", err)
+				}
+			}
+		case request.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field request_project", values[i])
+			} else if value.Valid {
+				r.request_project = new(uuid.UUID)
+				*r.request_project = *value.S.(*uuid.UUID)
+			}
+		case request.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field request_service", values[i])
+			} else if value.Valid {
+				r.request_service = new(uuid.UUID)
+				*r.request_service = *value.S.(*uuid.UUID)
 			}
 		}
 	}
@@ -142,8 +194,14 @@ func (r *Request) String() string {
 	var builder strings.Builder
 	builder.WriteString("Request(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", r.ID))
-	builder.WriteString("name=")
-	builder.WriteString(r.Name)
+	builder.WriteString("type=")
+	builder.WriteString(r.Type)
+	builder.WriteString(", ")
+	builder.WriteString("requested_by=")
+	builder.WriteString(r.RequestedBy)
+	builder.WriteString(", ")
+	builder.WriteString("spec=")
+	builder.WriteString(fmt.Sprintf("%v", r.Spec))
 	builder.WriteByte(')')
 	return builder.String()
 }

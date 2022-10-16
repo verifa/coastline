@@ -1,15 +1,16 @@
-package cuehack
+package basic
 
-#Requests: #ArtifactoryRepoRequest | #JenkinsServerRequest
+#Request: #ArtifactoryRepoRequest | #JenkinsServerRequest
+request:  #Request
 
-#Request: {
+#BaseRequest: {
 	project_id:   string
 	service_id:   string
 	requested_by: string
 }
 
 #ArtifactoryRepoRequest: {
-	#Request
+	#BaseRequest
 	type: "ArtifactoryRepoRequest"
 	spec: {
 		repo: string
@@ -17,11 +18,9 @@ package cuehack
 }
 
 #JenkinsServerRequest: {
-	#Request
+	#BaseRequest
 	type: "JenkinsServerRequest"
 	spec: {
 		name: string
 	}
 }
-
-request: #Requests

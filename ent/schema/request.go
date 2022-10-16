@@ -8,6 +8,8 @@ import (
 	"github.com/google/uuid"
 )
 
+type RequestSpec map[string]interface{}
+
 type Request struct {
 	ent.Schema
 }
@@ -16,14 +18,16 @@ func (Request) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New),
-		field.String("name").NotEmpty().Unique(),
+		field.String("type").NotEmpty(),
+		field.String("requested_by").NotEmpty(),
+		field.JSON("spec", RequestSpec{}),
 	}
 }
 
 func (Request) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("Project", Project.Type).Required(),
-		edge.To("Service", Service.Type).Required(),
+		edge.To("Project", Project.Type).Required().Unique(),
+		edge.To("Service", Service.Type).Required().Unique(),
 		edge.From("Approvals", Approval.Type).Ref("Request"),
 	}
 }

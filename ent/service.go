@@ -4,11 +4,11 @@ package ent
 
 import (
 	"fmt"
-	"github.com/verifa/coastline/ent/service"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/ent/service"
 )
 
 // Service is the model entity for the Service schema.

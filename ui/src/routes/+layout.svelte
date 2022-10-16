@@ -20,10 +20,9 @@
                 user.set(resp.data.user)
             } else if (!resp.error) {
                 if (resp.status === 401) {
-                    console.log("walalalalalal")
-                    // if (!isLoginPage()) {
-                    //     goto("/login")
-                    // }
+                    if (!isLoginPage()) {
+                        goto("/login")
+                    }
                 }
             }
         })
@@ -43,5 +42,4 @@
 	<slot/>
 {:else if isLoginPage()}
 	<slot/>
-    {/if}
-	<slot/>
+{/if}

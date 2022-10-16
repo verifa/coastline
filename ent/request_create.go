@@ -6,14 +6,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/verifa/coastline/ent/approval"
-	"github.com/verifa/coastline/ent/project"
-	"github.com/verifa/coastline/ent/request"
-	"github.com/verifa/coastline/ent/service"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/ent/approval"
+	"github.com/verifa/coastline/ent/project"
+	"github.com/verifa/coastline/ent/request"
+	"github.com/verifa/coastline/ent/schema"
+	"github.com/verifa/coastline/ent/service"
 )
 
 // RequestCreate is the builder for creating a Request entity.
@@ -23,9 +24,21 @@ type RequestCreate struct {
 	hooks    []Hook
 }
 
-// SetName sets the "name" field.
-func (rc *RequestCreate) SetName(s string) *RequestCreate {
-	rc.mutation.SetName(s)
+// SetType sets the "type" field.
+func (rc *RequestCreate) SetType(s string) *RequestCreate {
+	rc.mutation.SetType(s)
+	return rc
+}
+
+// SetRequestedBy sets the "requested_by" field.
+func (rc *RequestCreate) SetRequestedBy(s string) *RequestCreate {
+	rc.mutation.SetRequestedBy(s)
+	return rc
+}
+
+// SetSpec sets the "spec" field.
+func (rc *RequestCreate) SetSpec(ss schema.RequestSpec) *RequestCreate {
+	rc.mutation.SetSpec(ss)
 	return rc
 }
 
@@ -43,34 +56,26 @@ func (rc *RequestCreate) SetNillableID(u *uuid.UUID) *RequestCreate {
 	return rc
 }
 
-// AddProjectIDs adds the "Project" edge to the Project entity by IDs.
-func (rc *RequestCreate) AddProjectIDs(ids ...uuid.UUID) *RequestCreate {
-	rc.mutation.AddProjectIDs(ids...)
+// SetProjectID sets the "Project" edge to the Project entity by ID.
+func (rc *RequestCreate) SetProjectID(id uuid.UUID) *RequestCreate {
+	rc.mutation.SetProjectID(id)
 	return rc
 }
 
-// AddProject adds the "Project" edges to the Project entity.
-func (rc *RequestCreate) AddProject(p ...*Project) *RequestCreate {
-	ids := make([]uuid.UUID, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return rc.AddProjectIDs(ids...)
+// SetProject sets the "Project" edge to the Project entity.
+func (rc *RequestCreate) SetProject(p *Project) *RequestCreate {
+	return rc.SetProjectID(p.ID)
 }
 
-// AddServiceIDs adds the "Service" edge to the Service entity by IDs.
-func (rc *RequestCreate) AddServiceIDs(ids ...uuid.UUID) *RequestCreate {
-	rc.mutation.AddServiceIDs(ids...)
+// SetServiceID sets the "Service" edge to the Service entity by ID.
+func (rc *RequestCreate) SetServiceID(id uuid.UUID) *RequestCreate {
+	rc.mutation.SetServiceID(id)
 	return rc
 }
 
-// AddService adds the "Service" edges to the Service entity.
-func (rc *RequestCreate) AddService(s ...*Service) *RequestCreate {
-	ids := make([]uuid.UUID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return rc.AddServiceIDs(ids...)
+// SetService sets the "Service" edge to the Service entity.
+func (rc *RequestCreate) SetService(s *Service) *RequestCreate {
+	return rc.SetServiceID(s.ID)
 }
 
 // AddApprovalIDs adds the "Approvals" edge to the Approval entity by IDs.
@@ -173,18 +178,29 @@ func (rc *RequestCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (rc *RequestCreate) check() error {
-	if _, ok := rc.mutation.Name(); !ok {
-		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Request.name"`)}
+	if _, ok := rc.mutation.GetType(); !ok {
+		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Request.type"`)}
 	}
-	if v, ok := rc.mutation.Name(); ok {
-		if err := request.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Request.name": %w`, err)}
+	if v, ok := rc.mutation.GetType(); ok {
+		if err := request.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Request.type": %w`, err)}
 		}
 	}
-	if len(rc.mutation.ProjectIDs()) == 0 {
+	if _, ok := rc.mutation.RequestedBy(); !ok {
+		return &ValidationError{Name: "requested_by", err: errors.New(`ent: missing required field "Request.requested_by"`)}
+	}
+	if v, ok := rc.mutation.RequestedBy(); ok {
+		if err := request.RequestedByValidator(v); err != nil {
+			return &ValidationError{Name: "requested_by", err: fmt.Errorf(`ent: validator failed for field "Request.requested_by": %w`, err)}
+		}
+	}
+	if _, ok := rc.mutation.Spec(); !ok {
+		return &ValidationError{Name: "spec", err: errors.New(`ent: missing required field "Request.spec"`)}
+	}
+	if _, ok := rc.mutation.ProjectID(); !ok {
 		return &ValidationError{Name: "Project", err: errors.New(`ent: missing required edge "Request.Project"`)}
 	}
-	if len(rc.mutation.ServiceIDs()) == 0 {
+	if _, ok := rc.mutation.ServiceID(); !ok {
 		return &ValidationError{Name: "Service", err: errors.New(`ent: missing required edge "Request.Service"`)}
 	}
 	return nil
@@ -223,20 +239,36 @@ func (rc *RequestCreate) createSpec() (*Request, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := rc.mutation.Name(); ok {
+	if value, ok := rc.mutation.GetType(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: request.FieldName,
+			Column: request.FieldType,
 		})
-		_node.Name = value
+		_node.Type = value
+	}
+	if value, ok := rc.mutation.RequestedBy(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: request.FieldRequestedBy,
+		})
+		_node.RequestedBy = value
+	}
+	if value, ok := rc.mutation.Spec(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: request.FieldSpec,
+		})
+		_node.Spec = value
 	}
 	if nodes := rc.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   request.ProjectTable,
-			Columns: request.ProjectPrimaryKey,
+			Columns: []string{request.ProjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -248,14 +280,15 @@ func (rc *RequestCreate) createSpec() (*Request, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.request_project = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := rc.mutation.ServiceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   request.ServiceTable,
-			Columns: request.ServicePrimaryKey,
+			Columns: []string{request.ServiceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -267,6 +300,7 @@ func (rc *RequestCreate) createSpec() (*Request, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.request_service = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := rc.mutation.ApprovalsIDs(); len(nodes) > 0 {

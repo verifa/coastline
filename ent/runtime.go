@@ -3,13 +3,12 @@
 package ent
 
 import (
+	"github.com/google/uuid"
 	"github.com/verifa/coastline/ent/approval"
 	"github.com/verifa/coastline/ent/project"
 	"github.com/verifa/coastline/ent/request"
 	"github.com/verifa/coastline/ent/schema"
 	"github.com/verifa/coastline/ent/service"
-
-	"github.com/google/uuid"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -42,10 +41,14 @@ func init() {
 	project.DefaultID = projectDescID.Default.(func() uuid.UUID)
 	requestFields := schema.Request{}.Fields()
 	_ = requestFields
-	// requestDescName is the schema descriptor for name field.
-	requestDescName := requestFields[1].Descriptor()
-	// request.NameValidator is a validator for the "name" field. It is called by the builders before save.
-	request.NameValidator = requestDescName.Validators[0].(func(string) error)
+	// requestDescType is the schema descriptor for type field.
+	requestDescType := requestFields[1].Descriptor()
+	// request.TypeValidator is a validator for the "type" field. It is called by the builders before save.
+	request.TypeValidator = requestDescType.Validators[0].(func(string) error)
+	// requestDescRequestedBy is the schema descriptor for requested_by field.
+	requestDescRequestedBy := requestFields[2].Descriptor()
+	// request.RequestedByValidator is a validator for the "requested_by" field. It is called by the builders before save.
+	request.RequestedByValidator = requestDescRequestedBy.Validators[0].(func(string) error)
 	// requestDescID is the schema descriptor for id field.
 	requestDescID := requestFields[0].Descriptor()
 	// request.DefaultID holds the default value on creation for the id field.

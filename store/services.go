@@ -24,9 +24,9 @@ func (s *Store) QueryServices(ps ...predicate.Service) (*oapi.ServicesResp, erro
 	}, nil
 }
 
-func (s *Store) CreateService(newService *oapi.NewService) (*oapi.Service, error) {
+func (s *Store) CreateService(req *oapi.NewService) (*oapi.Service, error) {
 	dbService, err := s.client.Service.Create().
-		SetName(newService.Name).
+		SetName(req.Name).
 		Save(s.ctx)
 	if err != nil {
 		return nil, fmt.Errorf("creating service: %w", err)

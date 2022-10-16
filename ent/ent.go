@@ -6,14 +6,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/verifa/coastline/ent/approval"
-	"github.com/verifa/coastline/ent/project"
-	"github.com/verifa/coastline/ent/request"
-	"github.com/verifa/coastline/ent/service"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/verifa/coastline/ent/approval"
+	"github.com/verifa/coastline/ent/project"
+	"github.com/verifa/coastline/ent/request"
+	"github.com/verifa/coastline/ent/service"
 )
 
 // ent aliases to avoid import conflicts in user's code.

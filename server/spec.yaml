@@ -191,6 +191,95 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  #
+  # Requests
+  #
+  /requests:
+    get:
+      description: |
+        Return a list of requests
+      operationId: getRequests
+      parameters:
+        - name: name
+          in: query
+          description: name to filter by
+          required: false
+          style: form
+          schema:
+            type: array
+            items:
+              type: string
+        - name: limit
+          in: query
+          description: maximum number of results to return
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: request response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestsResp"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      description: Creates a new request
+      operationId: createRequest
+      requestBody:
+        description: Request to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewRequest"
+      responses:
+        "200":
+          description: request response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Request"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /requests/{id}:
+    get:
+      description: Returns a request by ID
+      operationId: getRequestByID
+      parameters:
+        - name: id
+          in: path
+          description: ID of request to fetch
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: uuid.UUID
+            x-go-type-import:
+              path: github.com/google/uuid
+      responses:
+        "200":
+          description: request response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Request"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   #   delete:
   #     description: deletes a single pet based on the ID supplied
   #     operationId: deletePet
@@ -277,6 +366,59 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Service"
+    #
+    # Request types
+    #
+    Request:
+      allOf:
+        - $ref: "#/components/schemas/NewRequest"
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+              format: uuid
+              x-go-type: uuid.UUID
+              x-go-type-import:
+                path: github.com/google/uuid
+    NewRequest:
+      type: object
+      required:
+        - type
+        - requested_by
+        - spec
+        - project_id
+        - service_id
+      properties:
+        type:
+          type: string
+        requested_by:
+          type: string
+        spec:
+          type: object
+        project_id:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+          x-go-type-import:
+            path: github.com/google/uuid
+        service_id:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+          x-go-type-import:
+            path: github.com/google/uuid
+
+    RequestsResp:
+      type: object
+      required:
+        - requests
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/Request"
 
     Error:
       type: object

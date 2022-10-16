@@ -6,14 +6,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
+	"github.com/google/uuid"
 	"github.com/verifa/coastline/ent/approval"
 	"github.com/verifa/coastline/ent/predicate"
 	"github.com/verifa/coastline/ent/project"
 	"github.com/verifa/coastline/ent/request"
+	"github.com/verifa/coastline/ent/schema"
 	"github.com/verifa/coastline/ent/service"
-	"sync"
-
-	"github.com/google/uuid"
 
 	"entgo.io/ent"
 )
@@ -913,13 +914,13 @@ type RequestMutation struct {
 	op                Op
 	typ               string
 	id                *uuid.UUID
-	name              *string
+	_type             *string
+	requested_by      *string
+	spec              *schema.RequestSpec
 	clearedFields     map[string]struct{}
-	_Project          map[uuid.UUID]struct{}
-	removed_Project   map[uuid.UUID]struct{}
+	_Project          *uuid.UUID
 	cleared_Project   bool
-	_Service          map[uuid.UUID]struct{}
-	removed_Service   map[uuid.UUID]struct{}
+	_Service          *uuid.UUID
 	cleared_Service   bool
 	_Approvals        map[uuid.UUID]struct{}
 	removed_Approvals map[uuid.UUID]struct{}
@@ -1033,50 +1034,117 @@ func (m *RequestMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	}
 }
 
-// SetName sets the "name" field.
-func (m *RequestMutation) SetName(s string) {
-	m.name = &s
+// SetType sets the "type" field.
+func (m *RequestMutation) SetType(s string) {
+	m._type = &s
 }
 
-// Name returns the value of the "name" field in the mutation.
-func (m *RequestMutation) Name() (r string, exists bool) {
-	v := m.name
+// GetType returns the value of the "type" field in the mutation.
+func (m *RequestMutation) GetType() (r string, exists bool) {
+	v := m._type
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldName returns the old "name" field's value of the Request entity.
+// OldType returns the old "type" field's value of the Request entity.
 // If the Request object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RequestMutation) OldName(ctx context.Context) (v string, err error) {
+func (m *RequestMutation) OldType(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldName is only allowed on UpdateOne operations")
+		return v, errors.New("OldType is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldName requires an ID field in the mutation")
+		return v, errors.New("OldType requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldName: %w", err)
+		return v, fmt.Errorf("querying old value for OldType: %w", err)
 	}
-	return oldValue.Name, nil
+	return oldValue.Type, nil
 }
 
-// ResetName resets all changes to the "name" field.
-func (m *RequestMutation) ResetName() {
-	m.name = nil
+// ResetType resets all changes to the "type" field.
+func (m *RequestMutation) ResetType() {
+	m._type = nil
 }
 
-// AddProjectIDs adds the "Project" edge to the Project entity by ids.
-func (m *RequestMutation) AddProjectIDs(ids ...uuid.UUID) {
-	if m._Project == nil {
-		m._Project = make(map[uuid.UUID]struct{})
+// SetRequestedBy sets the "requested_by" field.
+func (m *RequestMutation) SetRequestedBy(s string) {
+	m.requested_by = &s
+}
+
+// RequestedBy returns the value of the "requested_by" field in the mutation.
+func (m *RequestMutation) RequestedBy() (r string, exists bool) {
+	v := m.requested_by
+	if v == nil {
+		return
 	}
-	for i := range ids {
-		m._Project[ids[i]] = struct{}{}
+	return *v, true
+}
+
+// OldRequestedBy returns the old "requested_by" field's value of the Request entity.
+// If the Request object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RequestMutation) OldRequestedBy(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestedBy is only allowed on UpdateOne operations")
 	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestedBy: %w", err)
+	}
+	return oldValue.RequestedBy, nil
+}
+
+// ResetRequestedBy resets all changes to the "requested_by" field.
+func (m *RequestMutation) ResetRequestedBy() {
+	m.requested_by = nil
+}
+
+// SetSpec sets the "spec" field.
+func (m *RequestMutation) SetSpec(ss schema.RequestSpec) {
+	m.spec = &ss
+}
+
+// Spec returns the value of the "spec" field in the mutation.
+func (m *RequestMutation) Spec() (r schema.RequestSpec, exists bool) {
+	v := m.spec
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSpec returns the old "spec" field's value of the Request entity.
+// If the Request object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RequestMutation) OldSpec(ctx context.Context) (v schema.RequestSpec, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSpec is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSpec requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSpec: %w", err)
+	}
+	return oldValue.Spec, nil
+}
+
+// ResetSpec resets all changes to the "spec" field.
+func (m *RequestMutation) ResetSpec() {
+	m.spec = nil
+}
+
+// SetProjectID sets the "Project" edge to the Project entity by id.
+func (m *RequestMutation) SetProjectID(id uuid.UUID) {
+	m._Project = &id
 }
 
 // ClearProject clears the "Project" edge to the Project entity.
@@ -1089,29 +1157,20 @@ func (m *RequestMutation) ProjectCleared() bool {
 	return m.cleared_Project
 }
 
-// RemoveProjectIDs removes the "Project" edge to the Project entity by IDs.
-func (m *RequestMutation) RemoveProjectIDs(ids ...uuid.UUID) {
-	if m.removed_Project == nil {
-		m.removed_Project = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m._Project, ids[i])
-		m.removed_Project[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedProject returns the removed IDs of the "Project" edge to the Project entity.
-func (m *RequestMutation) RemovedProjectIDs() (ids []uuid.UUID) {
-	for id := range m.removed_Project {
-		ids = append(ids, id)
+// ProjectID returns the "Project" edge ID in the mutation.
+func (m *RequestMutation) ProjectID() (id uuid.UUID, exists bool) {
+	if m._Project != nil {
+		return *m._Project, true
 	}
 	return
 }
 
 // ProjectIDs returns the "Project" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProjectID instead. It exists only for internal usage by the builders.
 func (m *RequestMutation) ProjectIDs() (ids []uuid.UUID) {
-	for id := range m._Project {
-		ids = append(ids, id)
+	if id := m._Project; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -1120,17 +1179,11 @@ func (m *RequestMutation) ProjectIDs() (ids []uuid.UUID) {
 func (m *RequestMutation) ResetProject() {
 	m._Project = nil
 	m.cleared_Project = false
-	m.removed_Project = nil
 }
 
-// AddServiceIDs adds the "Service" edge to the Service entity by ids.
-func (m *RequestMutation) AddServiceIDs(ids ...uuid.UUID) {
-	if m._Service == nil {
-		m._Service = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		m._Service[ids[i]] = struct{}{}
-	}
+// SetServiceID sets the "Service" edge to the Service entity by id.
+func (m *RequestMutation) SetServiceID(id uuid.UUID) {
+	m._Service = &id
 }
 
 // ClearService clears the "Service" edge to the Service entity.
@@ -1143,29 +1196,20 @@ func (m *RequestMutation) ServiceCleared() bool {
 	return m.cleared_Service
 }
 
-// RemoveServiceIDs removes the "Service" edge to the Service entity by IDs.
-func (m *RequestMutation) RemoveServiceIDs(ids ...uuid.UUID) {
-	if m.removed_Service == nil {
-		m.removed_Service = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m._Service, ids[i])
-		m.removed_Service[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedService returns the removed IDs of the "Service" edge to the Service entity.
-func (m *RequestMutation) RemovedServiceIDs() (ids []uuid.UUID) {
-	for id := range m.removed_Service {
-		ids = append(ids, id)
+// ServiceID returns the "Service" edge ID in the mutation.
+func (m *RequestMutation) ServiceID() (id uuid.UUID, exists bool) {
+	if m._Service != nil {
+		return *m._Service, true
 	}
 	return
 }
 
 // ServiceIDs returns the "Service" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ServiceID instead. It exists only for internal usage by the builders.
 func (m *RequestMutation) ServiceIDs() (ids []uuid.UUID) {
-	for id := range m._Service {
-		ids = append(ids, id)
+	if id := m._Service; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -1174,7 +1218,6 @@ func (m *RequestMutation) ServiceIDs() (ids []uuid.UUID) {
 func (m *RequestMutation) ResetService() {
 	m._Service = nil
 	m.cleared_Service = false
-	m.removed_Service = nil
 }
 
 // AddApprovalIDs adds the "Approvals" edge to the Approval entity by ids.
@@ -1250,9 +1293,15 @@ func (m *RequestMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RequestMutation) Fields() []string {
-	fields := make([]string, 0, 1)
-	if m.name != nil {
-		fields = append(fields, request.FieldName)
+	fields := make([]string, 0, 3)
+	if m._type != nil {
+		fields = append(fields, request.FieldType)
+	}
+	if m.requested_by != nil {
+		fields = append(fields, request.FieldRequestedBy)
+	}
+	if m.spec != nil {
+		fields = append(fields, request.FieldSpec)
 	}
 	return fields
 }
@@ -1262,8 +1311,12 @@ func (m *RequestMutation) Fields() []string {
 // schema.
 func (m *RequestMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case request.FieldName:
-		return m.Name()
+	case request.FieldType:
+		return m.GetType()
+	case request.FieldRequestedBy:
+		return m.RequestedBy()
+	case request.FieldSpec:
+		return m.Spec()
 	}
 	return nil, false
 }
@@ -1273,8 +1326,12 @@ func (m *RequestMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *RequestMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case request.FieldName:
-		return m.OldName(ctx)
+	case request.FieldType:
+		return m.OldType(ctx)
+	case request.FieldRequestedBy:
+		return m.OldRequestedBy(ctx)
+	case request.FieldSpec:
+		return m.OldSpec(ctx)
 	}
 	return nil, fmt.Errorf("unknown Request field %s", name)
 }
@@ -1284,12 +1341,26 @@ func (m *RequestMutation) OldField(ctx context.Context, name string) (ent.Value,
 // type.
 func (m *RequestMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case request.FieldName:
+	case request.FieldType:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetName(v)
+		m.SetType(v)
+		return nil
+	case request.FieldRequestedBy:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestedBy(v)
+		return nil
+	case request.FieldSpec:
+		v, ok := value.(schema.RequestSpec)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSpec(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Request field %s", name)
@@ -1340,8 +1411,14 @@ func (m *RequestMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *RequestMutation) ResetField(name string) error {
 	switch name {
-	case request.FieldName:
-		m.ResetName()
+	case request.FieldType:
+		m.ResetType()
+		return nil
+	case request.FieldRequestedBy:
+		m.ResetRequestedBy()
+		return nil
+	case request.FieldSpec:
+		m.ResetSpec()
 		return nil
 	}
 	return fmt.Errorf("unknown Request field %s", name)
@@ -1367,17 +1444,13 @@ func (m *RequestMutation) AddedEdges() []string {
 func (m *RequestMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case request.EdgeProject:
-		ids := make([]ent.Value, 0, len(m._Project))
-		for id := range m._Project {
-			ids = append(ids, id)
+		if id := m._Project; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	case request.EdgeService:
-		ids := make([]ent.Value, 0, len(m._Service))
-		for id := range m._Service {
-			ids = append(ids, id)
+		if id := m._Service; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	case request.EdgeApprovals:
 		ids := make([]ent.Value, 0, len(m._Approvals))
 		for id := range m._Approvals {
@@ -1391,12 +1464,6 @@ func (m *RequestMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *RequestMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 3)
-	if m.removed_Project != nil {
-		edges = append(edges, request.EdgeProject)
-	}
-	if m.removed_Service != nil {
-		edges = append(edges, request.EdgeService)
-	}
 	if m.removed_Approvals != nil {
 		edges = append(edges, request.EdgeApprovals)
 	}
@@ -1407,18 +1474,6 @@ func (m *RequestMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *RequestMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case request.EdgeProject:
-		ids := make([]ent.Value, 0, len(m.removed_Project))
-		for id := range m.removed_Project {
-			ids = append(ids, id)
-		}
-		return ids
-	case request.EdgeService:
-		ids := make([]ent.Value, 0, len(m.removed_Service))
-		for id := range m.removed_Service {
-			ids = append(ids, id)
-		}
-		return ids
 	case request.EdgeApprovals:
 		ids := make([]ent.Value, 0, len(m.removed_Approvals))
 		for id := range m.removed_Approvals {
@@ -1462,6 +1517,12 @@ func (m *RequestMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *RequestMutation) ClearEdge(name string) error {
 	switch name {
+	case request.EdgeProject:
+		m.ClearProject()
+		return nil
+	case request.EdgeService:
+		m.ClearService()
+		return nil
 	}
 	return fmt.Errorf("unknown Request unique edge %s", name)
 }

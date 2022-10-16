@@ -9,11 +9,12 @@ import (
 	"cuelang.org/go/cue/load"
 	"cuelang.org/go/encoding/gocode/gocodec"
 	"github.com/stretchr/testify/require"
+	"github.com/verifa/coastline/server/oapi"
 )
 
 func TestAPI(t *testing.T) {
 	var (
-		module = "github.com/verifa/coastline/server/api"
+		module = "github.com/verifa/coastline/server/cuehack"
 		dir    = "."
 	)
 	c := cuecontext.New()
@@ -47,7 +48,7 @@ func TestAPI(t *testing.T) {
 
 func TestValidate(t *testing.T) {
 	var (
-		module = "github.com/verifa/coastline/server/api"
+		module = "github.com/verifa/coastline/server/cuehack"
 		dir    = "."
 	)
 	// c := cuecontext.New()
@@ -63,15 +64,34 @@ func TestValidate(t *testing.T) {
 	// value := c.BuildInstance(buildInstances[0])
 	require.NoError(t, inst.Value().Err())
 
-	// var i interface{}
-	i := map[string]interface{}{
-		"service": "abc",
+	reqs := []oapi.NewRequest{
+		{
+			Type:        "ArtifactoryRepoRequest",
+			RequestedBy: "someone",
+			Spec: map[string]interface{}{
+				"repo": "hello",
+			},
+		},
+		{
+			Type:        "JenkinsServerRequest",
+			RequestedBy: "someone",
+			Spec: map[string]interface{}{
+				"name": "hello",
+			},
+		},
 	}
 
 	codec := gocodec.New(r, nil)
-	{
-		err := codec.Validate(inst.Value(), i)
-		require.NoError(t, err)
+	for _, tt := range reqs {
+		t.Run(tt.Type, func(t *testing.T) {
+			i := map[string]interface{}{
+				"request": tt,
+			}
+			{
+				err := codec.Validate(inst.Value(), i)
+				require.NoError(t, err)
+			}
+		})
 	}
 
 }

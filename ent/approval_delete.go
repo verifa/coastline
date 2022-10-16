@@ -5,12 +5,12 @@ package ent
 import (
 	"context"
 	"fmt"
-	"github.com/verifa/coastline/ent/approval"
-	"github.com/verifa/coastline/ent/predicate"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/verifa/coastline/ent/approval"
+	"github.com/verifa/coastline/ent/predicate"
 )
 
 // ApprovalDelete is the builder for deleting a Approval entity.

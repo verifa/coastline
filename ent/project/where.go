@@ -3,11 +3,10 @@
 package project
 
 import (
-	"github.com/verifa/coastline/ent/predicate"
-
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.
@@ -193,7 +192,7 @@ func HasRequests() predicate.Project {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(RequestsTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, RequestsTable, RequestsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, true, RequestsTable, RequestsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -205,7 +204,7 @@ func HasRequestsWith(preds ...predicate.Request) predicate.Project {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(RequestsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, RequestsTable, RequestsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, true, RequestsTable, RequestsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

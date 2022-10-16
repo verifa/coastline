@@ -6,17 +6,17 @@ import (
 	"context"
 	"database/sql/driver"
 	"fmt"
-	"github.com/verifa/coastline/ent/approval"
-	"github.com/verifa/coastline/ent/predicate"
-	"github.com/verifa/coastline/ent/project"
-	"github.com/verifa/coastline/ent/request"
-	"github.com/verifa/coastline/ent/service"
 	"math"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/ent/approval"
+	"github.com/verifa/coastline/ent/predicate"
+	"github.com/verifa/coastline/ent/project"
+	"github.com/verifa/coastline/ent/request"
+	"github.com/verifa/coastline/ent/service"
 )
 
 // RequestQuery is the builder for querying Request entities.
@@ -31,6 +31,7 @@ type RequestQuery struct {
 	withProject   *ProjectQuery
 	withService   *ServiceQuery
 	withApprovals *ApprovalQuery
+	withFKs       bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -81,7 +82,7 @@ func (rq *RequestQuery) QueryProject() *ProjectQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(request.Table, request.FieldID, selector),
 			sqlgraph.To(project.Table, project.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, request.ProjectTable, request.ProjectPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, false, request.ProjectTable, request.ProjectColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
 		return fromU, nil
@@ -103,7 +104,7 @@ func (rq *RequestQuery) QueryService() *ServiceQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(request.Table, request.FieldID, selector),
 			sqlgraph.To(service.Table, service.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, request.ServiceTable, request.ServicePrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, false, request.ServiceTable, request.ServiceColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
 		return fromU, nil
@@ -363,12 +364,12 @@ func (rq *RequestQuery) WithApprovals(opts ...func(*ApprovalQuery)) *RequestQuer
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		Type string `json:"type,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Request.Query().
-//		GroupBy(request.FieldName).
+//		GroupBy(request.FieldType).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 //
@@ -392,11 +393,11 @@ func (rq *RequestQuery) GroupBy(field string, fields ...string) *RequestGroupBy 
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		Type string `json:"type,omitempty"`
 //	}
 //
 //	client.Request.Query().
-//		Select(request.FieldName).
+//		Select(request.FieldType).
 //		Scan(ctx, &v)
 //
 func (rq *RequestQuery) Select(fields ...string) *RequestSelect {
@@ -426,6 +427,7 @@ func (rq *RequestQuery) prepareQuery(ctx context.Context) error {
 func (rq *RequestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Request, error) {
 	var (
 		nodes       = []*Request{}
+		withFKs     = rq.withFKs
 		_spec       = rq.querySpec()
 		loadedTypes = [3]bool{
 			rq.withProject != nil,
@@ -433,6 +435,12 @@ func (rq *RequestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Requ
 			rq.withApprovals != nil,
 		}
 	)
+	if rq.withProject != nil || rq.withService != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, request.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Request).scanValues(nil, columns)
 	}
@@ -452,16 +460,14 @@ func (rq *RequestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Requ
 		return nodes, nil
 	}
 	if query := rq.withProject; query != nil {
-		if err := rq.loadProject(ctx, query, nodes,
-			func(n *Request) { n.Edges.Project = []*Project{} },
-			func(n *Request, e *Project) { n.Edges.Project = append(n.Edges.Project, e) }); err != nil {
+		if err := rq.loadProject(ctx, query, nodes, nil,
+			func(n *Request, e *Project) { n.Edges.Project = e }); err != nil {
 			return nil, err
 		}
 	}
 	if query := rq.withService; query != nil {
-		if err := rq.loadService(ctx, query, nodes,
-			func(n *Request) { n.Edges.Service = []*Service{} },
-			func(n *Request, e *Service) { n.Edges.Service = append(n.Edges.Service, e) }); err != nil {
+		if err := rq.loadService(ctx, query, nodes, nil,
+			func(n *Request, e *Service) { n.Edges.Service = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -476,117 +482,59 @@ func (rq *RequestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Requ
 }
 
 func (rq *RequestQuery) loadProject(ctx context.Context, query *ProjectQuery, nodes []*Request, init func(*Request), assign func(*Request, *Project)) error {
-	edgeIDs := make([]driver.Value, len(nodes))
-	byID := make(map[uuid.UUID]*Request)
-	nids := make(map[uuid.UUID]map[*Request]struct{})
-	for i, node := range nodes {
-		edgeIDs[i] = node.ID
-		byID[node.ID] = node
-		if init != nil {
-			init(node)
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Request)
+	for i := range nodes {
+		if nodes[i].request_project == nil {
+			continue
 		}
+		fk := *nodes[i].request_project
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(request.ProjectTable)
-		s.Join(joinT).On(s.C(project.FieldID), joinT.C(request.ProjectPrimaryKey[1]))
-		s.Where(sql.InValues(joinT.C(request.ProjectPrimaryKey[0]), edgeIDs...))
-		columns := s.SelectedColumns()
-		s.Select(joinT.C(request.ProjectPrimaryKey[0]))
-		s.AppendSelect(columns...)
-		s.SetDistinct(false)
-	})
-	if err := query.prepareQuery(ctx); err != nil {
-		return err
-	}
-	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
-		assign := spec.Assign
-		values := spec.ScanValues
-		spec.ScanValues = func(columns []string) ([]any, error) {
-			values, err := values(columns[1:])
-			if err != nil {
-				return nil, err
-			}
-			return append([]any{new(uuid.UUID)}, values...), nil
-		}
-		spec.Assign = func(columns []string, values []any) error {
-			outValue := *values[0].(*uuid.UUID)
-			inValue := *values[1].(*uuid.UUID)
-			if nids[inValue] == nil {
-				nids[inValue] = map[*Request]struct{}{byID[outValue]: struct{}{}}
-				return assign(columns[1:], values[1:])
-			}
-			nids[inValue][byID[outValue]] = struct{}{}
-			return nil
-		}
-	})
+	query.Where(project.IDIn(ids...))
+	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		nodes, ok := nids[n.ID]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected "Project" node returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "request_project" returned %v`, n.ID)
 		}
-		for kn := range nodes {
-			assign(kn, n)
+		for i := range nodes {
+			assign(nodes[i], n)
 		}
 	}
 	return nil
 }
 func (rq *RequestQuery) loadService(ctx context.Context, query *ServiceQuery, nodes []*Request, init func(*Request), assign func(*Request, *Service)) error {
-	edgeIDs := make([]driver.Value, len(nodes))
-	byID := make(map[uuid.UUID]*Request)
-	nids := make(map[uuid.UUID]map[*Request]struct{})
-	for i, node := range nodes {
-		edgeIDs[i] = node.ID
-		byID[node.ID] = node
-		if init != nil {
-			init(node)
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Request)
+	for i := range nodes {
+		if nodes[i].request_service == nil {
+			continue
 		}
+		fk := *nodes[i].request_service
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(request.ServiceTable)
-		s.Join(joinT).On(s.C(service.FieldID), joinT.C(request.ServicePrimaryKey[1]))
-		s.Where(sql.InValues(joinT.C(request.ServicePrimaryKey[0]), edgeIDs...))
-		columns := s.SelectedColumns()
-		s.Select(joinT.C(request.ServicePrimaryKey[0]))
-		s.AppendSelect(columns...)
-		s.SetDistinct(false)
-	})
-	if err := query.prepareQuery(ctx); err != nil {
-		return err
-	}
-	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
-		assign := spec.Assign
-		values := spec.ScanValues
-		spec.ScanValues = func(columns []string) ([]any, error) {
-			values, err := values(columns[1:])
-			if err != nil {
-				return nil, err
-			}
-			return append([]any{new(uuid.UUID)}, values...), nil
-		}
-		spec.Assign = func(columns []string, values []any) error {
-			outValue := *values[0].(*uuid.UUID)
-			inValue := *values[1].(*uuid.UUID)
-			if nids[inValue] == nil {
-				nids[inValue] = map[*Request]struct{}{byID[outValue]: struct{}{}}
-				return assign(columns[1:], values[1:])
-			}
-			nids[inValue][byID[outValue]] = struct{}{}
-			return nil
-		}
-	})
+	query.Where(service.IDIn(ids...))
+	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		nodes, ok := nids[n.ID]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected "Service" node returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "request_service" returned %v`, n.ID)
 		}
-		for kn := range nodes {
-			assign(kn, n)
+		for i := range nodes {
+			assign(nodes[i], n)
 		}
 	}
 	return nil

@@ -6,15 +6,15 @@ import (
 	"context"
 	"database/sql/driver"
 	"fmt"
-	"github.com/verifa/coastline/ent/approval"
-	"github.com/verifa/coastline/ent/predicate"
-	"github.com/verifa/coastline/ent/request"
 	"math"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/ent/approval"
+	"github.com/verifa/coastline/ent/predicate"
+	"github.com/verifa/coastline/ent/request"
 )
 
 // ApprovalQuery is the builder for querying Approval entities.

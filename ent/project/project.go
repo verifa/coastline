@@ -17,11 +17,13 @@ const (
 	EdgeRequests = "Requests"
 	// Table holds the table name of the project in the database.
 	Table = "projects"
-	// RequestsTable is the table that holds the Requests relation/edge. The primary key declared below.
-	RequestsTable = "request_Project"
+	// RequestsTable is the table that holds the Requests relation/edge.
+	RequestsTable = "requests"
 	// RequestsInverseTable is the table name for the Request entity.
 	// It exists in this package in order to avoid circular dependency with the "request" package.
 	RequestsInverseTable = "requests"
+	// RequestsColumn is the table column denoting the Requests relation/edge.
+	RequestsColumn = "request_project"
 )
 
 // Columns holds all SQL columns for project fields.
@@ -29,12 +31,6 @@ var Columns = []string{
 	FieldID,
 	FieldName,
 }
-
-var (
-	// RequestsPrimaryKey and RequestsColumn2 are the table columns denoting the
-	// primary key for the Requests relation (M2M).
-	RequestsPrimaryKey = []string{"request_id", "project_id"}
-)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {

@@ -6,14 +6,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/verifa/coastline/ent/predicate"
-	"github.com/verifa/coastline/ent/request"
-	"github.com/verifa/coastline/ent/service"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/ent/predicate"
+	"github.com/verifa/coastline/ent/request"
+	"github.com/verifa/coastline/ent/service"
 )
 
 // ServiceUpdate is the builder for updating Service entities.
@@ -173,10 +173,10 @@ func (su *ServiceUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if su.mutation.RequestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
 			Table:   service.RequestsTable,
-			Columns: service.RequestsPrimaryKey,
+			Columns: []string{service.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -189,10 +189,10 @@ func (su *ServiceUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := su.mutation.RemovedRequestsIDs(); len(nodes) > 0 && !su.mutation.RequestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
 			Table:   service.RequestsTable,
-			Columns: service.RequestsPrimaryKey,
+			Columns: []string{service.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -208,10 +208,10 @@ func (su *ServiceUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if nodes := su.mutation.RequestsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
 			Table:   service.RequestsTable,
-			Columns: service.RequestsPrimaryKey,
+			Columns: []string{service.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -418,10 +418,10 @@ func (suo *ServiceUpdateOne) sqlSave(ctx context.Context) (_node *Service, err e
 	}
 	if suo.mutation.RequestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
 			Table:   service.RequestsTable,
-			Columns: service.RequestsPrimaryKey,
+			Columns: []string{service.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -434,10 +434,10 @@ func (suo *ServiceUpdateOne) sqlSave(ctx context.Context) (_node *Service, err e
 	}
 	if nodes := suo.mutation.RemovedRequestsIDs(); len(nodes) > 0 && !suo.mutation.RequestsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
 			Table:   service.RequestsTable,
-			Columns: service.RequestsPrimaryKey,
+			Columns: []string{service.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -453,10 +453,10 @@ func (suo *ServiceUpdateOne) sqlSave(ctx context.Context) (_node *Service, err e
 	}
 	if nodes := suo.mutation.RequestsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
 			Table:   service.RequestsTable,
-			Columns: service.RequestsPrimaryKey,
+			Columns: []string{service.RequestsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

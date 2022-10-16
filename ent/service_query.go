@@ -6,15 +6,15 @@ import (
 	"context"
 	"database/sql/driver"
 	"fmt"
-	"github.com/verifa/coastline/ent/predicate"
-	"github.com/verifa/coastline/ent/request"
-	"github.com/verifa/coastline/ent/service"
 	"math"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/ent/predicate"
+	"github.com/verifa/coastline/ent/request"
+	"github.com/verifa/coastline/ent/service"
 )
 
 // ServiceQuery is the builder for querying Service entities.
@@ -77,7 +77,7 @@ func (sq *ServiceQuery) QueryRequests() *RequestQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(service.Table, service.FieldID, selector),
 			sqlgraph.To(request.Table, request.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, service.RequestsTable, service.RequestsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, true, service.RequestsTable, service.RequestsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -388,60 +388,33 @@ func (sq *ServiceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Serv
 }
 
 func (sq *ServiceQuery) loadRequests(ctx context.Context, query *RequestQuery, nodes []*Service, init func(*Service), assign func(*Service, *Request)) error {
-	edgeIDs := make([]driver.Value, len(nodes))
-	byID := make(map[uuid.UUID]*Service)
-	nids := make(map[uuid.UUID]map[*Service]struct{})
-	for i, node := range nodes {
-		edgeIDs[i] = node.ID
-		byID[node.ID] = node
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Service)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
 		if init != nil {
-			init(node)
+			init(nodes[i])
 		}
 	}
-	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(service.RequestsTable)
-		s.Join(joinT).On(s.C(request.FieldID), joinT.C(service.RequestsPrimaryKey[0]))
-		s.Where(sql.InValues(joinT.C(service.RequestsPrimaryKey[1]), edgeIDs...))
-		columns := s.SelectedColumns()
-		s.Select(joinT.C(service.RequestsPrimaryKey[1]))
-		s.AppendSelect(columns...)
-		s.SetDistinct(false)
-	})
-	if err := query.prepareQuery(ctx); err != nil {
-		return err
-	}
-	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
-		assign := spec.Assign
-		values := spec.ScanValues
-		spec.ScanValues = func(columns []string) ([]any, error) {
-			values, err := values(columns[1:])
-			if err != nil {
-				return nil, err
-			}
-			return append([]any{new(uuid.UUID)}, values...), nil
-		}
-		spec.Assign = func(columns []string, values []any) error {
-			outValue := *values[0].(*uuid.UUID)
-			inValue := *values[1].(*uuid.UUID)
-			if nids[inValue] == nil {
-				nids[inValue] = map[*Service]struct{}{byID[outValue]: struct{}{}}
-				return assign(columns[1:], values[1:])
-			}
-			nids[inValue][byID[outValue]] = struct{}{}
-			return nil
-		}
-	})
+	query.withFKs = true
+	query.Where(predicate.Request(func(s *sql.Selector) {
+		s.Where(sql.InValues(service.RequestsColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		nodes, ok := nids[n.ID]
+		fk := n.request_service
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "request_service" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected "Requests" node returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "request_service" returned %v for node %v`, *fk, n.ID)
 		}
-		for kn := range nodes {
-			assign(kn, n)
-		}
+		assign(node, n)
 	}
 	return nil
 }

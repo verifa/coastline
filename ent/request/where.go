@@ -3,11 +3,10 @@
 package request
 
 import (
-	"github.com/verifa/coastline/ent/predicate"
-
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.
@@ -81,109 +80,215 @@ func IDLTE(id uuid.UUID) predicate.Request {
 	})
 }
 
-// Name applies equality check predicate on the "name" field. It's identical to NameEQ.
-func Name(v string) predicate.Request {
+// Type applies equality check predicate on the "type" field. It's identical to TypeEQ.
+func Type(v string) predicate.Request {
 	return predicate.Request(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldName), v))
+		s.Where(sql.EQ(s.C(FieldType), v))
 	})
 }
 
-// NameEQ applies the EQ predicate on the "name" field.
-func NameEQ(v string) predicate.Request {
+// RequestedBy applies equality check predicate on the "requested_by" field. It's identical to RequestedByEQ.
+func RequestedBy(v string) predicate.Request {
 	return predicate.Request(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldName), v))
+		s.Where(sql.EQ(s.C(FieldRequestedBy), v))
 	})
 }
 
-// NameNEQ applies the NEQ predicate on the "name" field.
-func NameNEQ(v string) predicate.Request {
+// TypeEQ applies the EQ predicate on the "type" field.
+func TypeEQ(v string) predicate.Request {
 	return predicate.Request(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldName), v))
+		s.Where(sql.EQ(s.C(FieldType), v))
 	})
 }
 
-// NameIn applies the In predicate on the "name" field.
-func NameIn(vs ...string) predicate.Request {
+// TypeNEQ applies the NEQ predicate on the "type" field.
+func TypeNEQ(v string) predicate.Request {
+	return predicate.Request(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldType), v))
+	})
+}
+
+// TypeIn applies the In predicate on the "type" field.
+func TypeIn(vs ...string) predicate.Request {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]
 	}
 	return predicate.Request(func(s *sql.Selector) {
-		s.Where(sql.In(s.C(FieldName), v...))
+		s.Where(sql.In(s.C(FieldType), v...))
 	})
 }
 
-// NameNotIn applies the NotIn predicate on the "name" field.
-func NameNotIn(vs ...string) predicate.Request {
+// TypeNotIn applies the NotIn predicate on the "type" field.
+func TypeNotIn(vs ...string) predicate.Request {
 	v := make([]any, len(vs))
 	for i := range v {
 		v[i] = vs[i]
 	}
 	return predicate.Request(func(s *sql.Selector) {
-		s.Where(sql.NotIn(s.C(FieldName), v...))
+		s.Where(sql.NotIn(s.C(FieldType), v...))
 	})
 }
 
-// NameGT applies the GT predicate on the "name" field.
-func NameGT(v string) predicate.Request {
+// TypeGT applies the GT predicate on the "type" field.
+func TypeGT(v string) predicate.Request {
 	return predicate.Request(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldName), v))
+		s.Where(sql.GT(s.C(FieldType), v))
 	})
 }
 
-// NameGTE applies the GTE predicate on the "name" field.
-func NameGTE(v string) predicate.Request {
+// TypeGTE applies the GTE predicate on the "type" field.
+func TypeGTE(v string) predicate.Request {
 	return predicate.Request(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldName), v))
+		s.Where(sql.GTE(s.C(FieldType), v))
 	})
 }
 
-// NameLT applies the LT predicate on the "name" field.
-func NameLT(v string) predicate.Request {
+// TypeLT applies the LT predicate on the "type" field.
+func TypeLT(v string) predicate.Request {
 	return predicate.Request(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldName), v))
+		s.Where(sql.LT(s.C(FieldType), v))
 	})
 }
 
-// NameLTE applies the LTE predicate on the "name" field.
-func NameLTE(v string) predicate.Request {
+// TypeLTE applies the LTE predicate on the "type" field.
+func TypeLTE(v string) predicate.Request {
 	return predicate.Request(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldName), v))
+		s.Where(sql.LTE(s.C(FieldType), v))
 	})
 }
 
-// NameContains applies the Contains predicate on the "name" field.
-func NameContains(v string) predicate.Request {
+// TypeContains applies the Contains predicate on the "type" field.
+func TypeContains(v string) predicate.Request {
 	return predicate.Request(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldName), v))
+		s.Where(sql.Contains(s.C(FieldType), v))
 	})
 }
 
-// NameHasPrefix applies the HasPrefix predicate on the "name" field.
-func NameHasPrefix(v string) predicate.Request {
+// TypeHasPrefix applies the HasPrefix predicate on the "type" field.
+func TypeHasPrefix(v string) predicate.Request {
 	return predicate.Request(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldName), v))
+		s.Where(sql.HasPrefix(s.C(FieldType), v))
 	})
 }
 
-// NameHasSuffix applies the HasSuffix predicate on the "name" field.
-func NameHasSuffix(v string) predicate.Request {
+// TypeHasSuffix applies the HasSuffix predicate on the "type" field.
+func TypeHasSuffix(v string) predicate.Request {
 	return predicate.Request(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldName), v))
+		s.Where(sql.HasSuffix(s.C(FieldType), v))
 	})
 }
 
-// NameEqualFold applies the EqualFold predicate on the "name" field.
-func NameEqualFold(v string) predicate.Request {
+// TypeEqualFold applies the EqualFold predicate on the "type" field.
+func TypeEqualFold(v string) predicate.Request {
 	return predicate.Request(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldName), v))
+		s.Where(sql.EqualFold(s.C(FieldType), v))
 	})
 }
 
-// NameContainsFold applies the ContainsFold predicate on the "name" field.
-func NameContainsFold(v string) predicate.Request {
+// TypeContainsFold applies the ContainsFold predicate on the "type" field.
+func TypeContainsFold(v string) predicate.Request {
 	return predicate.Request(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldName), v))
+		s.Where(sql.ContainsFold(s.C(FieldType), v))
+	})
+}
+
+// RequestedByEQ applies the EQ predicate on the "requested_by" field.
+func RequestedByEQ(v string) predicate.Request {
+	return predicate.Request(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldRequestedBy), v))
+	})
+}
+
+// RequestedByNEQ applies the NEQ predicate on the "requested_by" field.
+func RequestedByNEQ(v string) predicate.Request {
+	return predicate.Request(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldRequestedBy), v))
+	})
+}
+
+// RequestedByIn applies the In predicate on the "requested_by" field.
+func RequestedByIn(vs ...string) predicate.Request {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Request(func(s *sql.Selector) {
+		s.Where(sql.In(s.C(FieldRequestedBy), v...))
+	})
+}
+
+// RequestedByNotIn applies the NotIn predicate on the "requested_by" field.
+func RequestedByNotIn(vs ...string) predicate.Request {
+	v := make([]any, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Request(func(s *sql.Selector) {
+		s.Where(sql.NotIn(s.C(FieldRequestedBy), v...))
+	})
+}
+
+// RequestedByGT applies the GT predicate on the "requested_by" field.
+func RequestedByGT(v string) predicate.Request {
+	return predicate.Request(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldRequestedBy), v))
+	})
+}
+
+// RequestedByGTE applies the GTE predicate on the "requested_by" field.
+func RequestedByGTE(v string) predicate.Request {
+	return predicate.Request(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldRequestedBy), v))
+	})
+}
+
+// RequestedByLT applies the LT predicate on the "requested_by" field.
+func RequestedByLT(v string) predicate.Request {
+	return predicate.Request(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldRequestedBy), v))
+	})
+}
+
+// RequestedByLTE applies the LTE predicate on the "requested_by" field.
+func RequestedByLTE(v string) predicate.Request {
+	return predicate.Request(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldRequestedBy), v))
+	})
+}
+
+// RequestedByContains applies the Contains predicate on the "requested_by" field.
+func RequestedByContains(v string) predicate.Request {
+	return predicate.Request(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldRequestedBy), v))
+	})
+}
+
+// RequestedByHasPrefix applies the HasPrefix predicate on the "requested_by" field.
+func RequestedByHasPrefix(v string) predicate.Request {
+	return predicate.Request(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldRequestedBy), v))
+	})
+}
+
+// RequestedByHasSuffix applies the HasSuffix predicate on the "requested_by" field.
+func RequestedByHasSuffix(v string) predicate.Request {
+	return predicate.Request(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldRequestedBy), v))
+	})
+}
+
+// RequestedByEqualFold applies the EqualFold predicate on the "requested_by" field.
+func RequestedByEqualFold(v string) predicate.Request {
+	return predicate.Request(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldRequestedBy), v))
+	})
+}
+
+// RequestedByContainsFold applies the ContainsFold predicate on the "requested_by" field.
+func RequestedByContainsFold(v string) predicate.Request {
+	return predicate.Request(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldRequestedBy), v))
 	})
 }
 
@@ -193,7 +298,7 @@ func HasProject() predicate.Request {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(ProjectTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, ProjectTable, ProjectPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, false, ProjectTable, ProjectColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -205,7 +310,7 @@ func HasProjectWith(preds ...predicate.Project) predicate.Request {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(ProjectInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, ProjectTable, ProjectPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, false, ProjectTable, ProjectColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
@@ -221,7 +326,7 @@ func HasService() predicate.Request {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(ServiceTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, ServiceTable, ServicePrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, false, ServiceTable, ServiceColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -233,7 +338,7 @@ func HasServiceWith(preds ...predicate.Service) predicate.Request {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(ServiceInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, ServiceTable, ServicePrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, false, ServiceTable, ServiceColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

@@ -11,8 +11,12 @@ const (
 	Label = "request"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldName holds the string denoting the name field in the database.
-	FieldName = "name"
+	// FieldType holds the string denoting the type field in the database.
+	FieldType = "type"
+	// FieldRequestedBy holds the string denoting the requested_by field in the database.
+	FieldRequestedBy = "requested_by"
+	// FieldSpec holds the string denoting the spec field in the database.
+	FieldSpec = "spec"
 	// EdgeProject holds the string denoting the project edge name in mutations.
 	EdgeProject = "Project"
 	// EdgeService holds the string denoting the service edge name in mutations.
@@ -21,16 +25,20 @@ const (
 	EdgeApprovals = "Approvals"
 	// Table holds the table name of the request in the database.
 	Table = "requests"
-	// ProjectTable is the table that holds the Project relation/edge. The primary key declared below.
-	ProjectTable = "request_Project"
+	// ProjectTable is the table that holds the Project relation/edge.
+	ProjectTable = "requests"
 	// ProjectInverseTable is the table name for the Project entity.
 	// It exists in this package in order to avoid circular dependency with the "project" package.
 	ProjectInverseTable = "projects"
-	// ServiceTable is the table that holds the Service relation/edge. The primary key declared below.
-	ServiceTable = "request_Service"
+	// ProjectColumn is the table column denoting the Project relation/edge.
+	ProjectColumn = "request_project"
+	// ServiceTable is the table that holds the Service relation/edge.
+	ServiceTable = "requests"
 	// ServiceInverseTable is the table name for the Service entity.
 	// It exists in this package in order to avoid circular dependency with the "service" package.
 	ServiceInverseTable = "services"
+	// ServiceColumn is the table column denoting the Service relation/edge.
+	ServiceColumn = "request_service"
 	// ApprovalsTable is the table that holds the Approvals relation/edge. The primary key declared below.
 	ApprovalsTable = "approval_Request"
 	// ApprovalsInverseTable is the table name for the Approval entity.
@@ -41,16 +49,19 @@ const (
 // Columns holds all SQL columns for request fields.
 var Columns = []string{
 	FieldID,
-	FieldName,
+	FieldType,
+	FieldRequestedBy,
+	FieldSpec,
+}
+
+// ForeignKeys holds the SQL foreign-keys that are owned by the "requests"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"request_project",
+	"request_service",
 }
 
 var (
-	// ProjectPrimaryKey and ProjectColumn2 are the table columns denoting the
-	// primary key for the Project relation (M2M).
-	ProjectPrimaryKey = []string{"request_id", "project_id"}
-	// ServicePrimaryKey and ServiceColumn2 are the table columns denoting the
-	// primary key for the Service relation (M2M).
-	ServicePrimaryKey = []string{"request_id", "service_id"}
 	// ApprovalsPrimaryKey and ApprovalsColumn2 are the table columns denoting the
 	// primary key for the Approvals relation (M2M).
 	ApprovalsPrimaryKey = []string{"approval_id", "request_id"}
@@ -63,12 +74,19 @@ func ValidColumn(column string) bool {
 			return true
 		}
 	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
+			return true
+		}
+	}
 	return false
 }
 
 var (
-	// NameValidator is a validator for the "name" field. It is called by the builders before save.
-	NameValidator func(string) error
+	// TypeValidator is a validator for the "type" field. It is called by the builders before save.
+	TypeValidator func(string) error
+	// RequestedByValidator is a validator for the "requested_by" field. It is called by the builders before save.
+	RequestedByValidator func(string) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )

@@ -6,16 +6,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/verifa/coastline/ent/approval"
-	"github.com/verifa/coastline/ent/predicate"
-	"github.com/verifa/coastline/ent/project"
-	"github.com/verifa/coastline/ent/request"
-	"github.com/verifa/coastline/ent/service"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/ent/approval"
+	"github.com/verifa/coastline/ent/predicate"
+	"github.com/verifa/coastline/ent/project"
+	"github.com/verifa/coastline/ent/request"
+	"github.com/verifa/coastline/ent/schema"
+	"github.com/verifa/coastline/ent/service"
 )
 
 // RequestUpdate is the builder for updating Request entities.
@@ -31,40 +32,44 @@ func (ru *RequestUpdate) Where(ps ...predicate.Request) *RequestUpdate {
 	return ru
 }
 
-// SetName sets the "name" field.
-func (ru *RequestUpdate) SetName(s string) *RequestUpdate {
-	ru.mutation.SetName(s)
+// SetType sets the "type" field.
+func (ru *RequestUpdate) SetType(s string) *RequestUpdate {
+	ru.mutation.SetType(s)
 	return ru
 }
 
-// AddProjectIDs adds the "Project" edge to the Project entity by IDs.
-func (ru *RequestUpdate) AddProjectIDs(ids ...uuid.UUID) *RequestUpdate {
-	ru.mutation.AddProjectIDs(ids...)
+// SetRequestedBy sets the "requested_by" field.
+func (ru *RequestUpdate) SetRequestedBy(s string) *RequestUpdate {
+	ru.mutation.SetRequestedBy(s)
 	return ru
 }
 
-// AddProject adds the "Project" edges to the Project entity.
-func (ru *RequestUpdate) AddProject(p ...*Project) *RequestUpdate {
-	ids := make([]uuid.UUID, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return ru.AddProjectIDs(ids...)
-}
-
-// AddServiceIDs adds the "Service" edge to the Service entity by IDs.
-func (ru *RequestUpdate) AddServiceIDs(ids ...uuid.UUID) *RequestUpdate {
-	ru.mutation.AddServiceIDs(ids...)
+// SetSpec sets the "spec" field.
+func (ru *RequestUpdate) SetSpec(ss schema.RequestSpec) *RequestUpdate {
+	ru.mutation.SetSpec(ss)
 	return ru
 }
 
-// AddService adds the "Service" edges to the Service entity.
-func (ru *RequestUpdate) AddService(s ...*Service) *RequestUpdate {
-	ids := make([]uuid.UUID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return ru.AddServiceIDs(ids...)
+// SetProjectID sets the "Project" edge to the Project entity by ID.
+func (ru *RequestUpdate) SetProjectID(id uuid.UUID) *RequestUpdate {
+	ru.mutation.SetProjectID(id)
+	return ru
+}
+
+// SetProject sets the "Project" edge to the Project entity.
+func (ru *RequestUpdate) SetProject(p *Project) *RequestUpdate {
+	return ru.SetProjectID(p.ID)
+}
+
+// SetServiceID sets the "Service" edge to the Service entity by ID.
+func (ru *RequestUpdate) SetServiceID(id uuid.UUID) *RequestUpdate {
+	ru.mutation.SetServiceID(id)
+	return ru
+}
+
+// SetService sets the "Service" edge to the Service entity.
+func (ru *RequestUpdate) SetService(s *Service) *RequestUpdate {
+	return ru.SetServiceID(s.ID)
 }
 
 // AddApprovalIDs adds the "Approvals" edge to the Approval entity by IDs.
@@ -87,46 +92,16 @@ func (ru *RequestUpdate) Mutation() *RequestMutation {
 	return ru.mutation
 }
 
-// ClearProject clears all "Project" edges to the Project entity.
+// ClearProject clears the "Project" edge to the Project entity.
 func (ru *RequestUpdate) ClearProject() *RequestUpdate {
 	ru.mutation.ClearProject()
 	return ru
 }
 
-// RemoveProjectIDs removes the "Project" edge to Project entities by IDs.
-func (ru *RequestUpdate) RemoveProjectIDs(ids ...uuid.UUID) *RequestUpdate {
-	ru.mutation.RemoveProjectIDs(ids...)
-	return ru
-}
-
-// RemoveProject removes "Project" edges to Project entities.
-func (ru *RequestUpdate) RemoveProject(p ...*Project) *RequestUpdate {
-	ids := make([]uuid.UUID, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return ru.RemoveProjectIDs(ids...)
-}
-
-// ClearService clears all "Service" edges to the Service entity.
+// ClearService clears the "Service" edge to the Service entity.
 func (ru *RequestUpdate) ClearService() *RequestUpdate {
 	ru.mutation.ClearService()
 	return ru
-}
-
-// RemoveServiceIDs removes the "Service" edge to Service entities by IDs.
-func (ru *RequestUpdate) RemoveServiceIDs(ids ...uuid.UUID) *RequestUpdate {
-	ru.mutation.RemoveServiceIDs(ids...)
-	return ru
-}
-
-// RemoveService removes "Service" edges to Service entities.
-func (ru *RequestUpdate) RemoveService(s ...*Service) *RequestUpdate {
-	ids := make([]uuid.UUID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return ru.RemoveServiceIDs(ids...)
 }
 
 // ClearApprovals clears all "Approvals" edges to the Approval entity.
@@ -212,10 +187,21 @@ func (ru *RequestUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (ru *RequestUpdate) check() error {
-	if v, ok := ru.mutation.Name(); ok {
-		if err := request.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Request.name": %w`, err)}
+	if v, ok := ru.mutation.GetType(); ok {
+		if err := request.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Request.type": %w`, err)}
 		}
+	}
+	if v, ok := ru.mutation.RequestedBy(); ok {
+		if err := request.RequestedByValidator(v); err != nil {
+			return &ValidationError{Name: "requested_by", err: fmt.Errorf(`ent: validator failed for field "Request.requested_by": %w`, err)}
+		}
+	}
+	if _, ok := ru.mutation.ProjectID(); ru.mutation.ProjectCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Request.Project"`)
+	}
+	if _, ok := ru.mutation.ServiceID(); ru.mutation.ServiceCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Request.Service"`)
 	}
 	return nil
 }
@@ -238,19 +224,33 @@ func (ru *RequestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := ru.mutation.Name(); ok {
+	if value, ok := ru.mutation.GetType(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: request.FieldName,
+			Column: request.FieldType,
+		})
+	}
+	if value, ok := ru.mutation.RequestedBy(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: request.FieldRequestedBy,
+		})
+	}
+	if value, ok := ru.mutation.Spec(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: request.FieldSpec,
 		})
 	}
 	if ru.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   request.ProjectTable,
-			Columns: request.ProjectPrimaryKey,
+			Columns: []string{request.ProjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -258,34 +258,15 @@ func (ru *RequestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 					Column: project.FieldID,
 				},
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ru.mutation.RemovedProjectIDs(); len(nodes) > 0 && !ru.mutation.ProjectCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   request.ProjectTable,
-			Columns: request.ProjectPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: project.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := ru.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   request.ProjectTable,
-			Columns: request.ProjectPrimaryKey,
+			Columns: []string{request.ProjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -301,10 +282,10 @@ func (ru *RequestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if ru.mutation.ServiceCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   request.ServiceTable,
-			Columns: request.ServicePrimaryKey,
+			Columns: []string{request.ServiceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -312,34 +293,15 @@ func (ru *RequestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 					Column: service.FieldID,
 				},
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ru.mutation.RemovedServiceIDs(); len(nodes) > 0 && !ru.mutation.ServiceCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   request.ServiceTable,
-			Columns: request.ServicePrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: service.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := ru.mutation.ServiceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   request.ServiceTable,
-			Columns: request.ServicePrimaryKey,
+			Columns: []string{request.ServiceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -426,40 +388,44 @@ type RequestUpdateOne struct {
 	mutation *RequestMutation
 }
 
-// SetName sets the "name" field.
-func (ruo *RequestUpdateOne) SetName(s string) *RequestUpdateOne {
-	ruo.mutation.SetName(s)
+// SetType sets the "type" field.
+func (ruo *RequestUpdateOne) SetType(s string) *RequestUpdateOne {
+	ruo.mutation.SetType(s)
 	return ruo
 }
 
-// AddProjectIDs adds the "Project" edge to the Project entity by IDs.
-func (ruo *RequestUpdateOne) AddProjectIDs(ids ...uuid.UUID) *RequestUpdateOne {
-	ruo.mutation.AddProjectIDs(ids...)
+// SetRequestedBy sets the "requested_by" field.
+func (ruo *RequestUpdateOne) SetRequestedBy(s string) *RequestUpdateOne {
+	ruo.mutation.SetRequestedBy(s)
 	return ruo
 }
 
-// AddProject adds the "Project" edges to the Project entity.
-func (ruo *RequestUpdateOne) AddProject(p ...*Project) *RequestUpdateOne {
-	ids := make([]uuid.UUID, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return ruo.AddProjectIDs(ids...)
-}
-
-// AddServiceIDs adds the "Service" edge to the Service entity by IDs.
-func (ruo *RequestUpdateOne) AddServiceIDs(ids ...uuid.UUID) *RequestUpdateOne {
-	ruo.mutation.AddServiceIDs(ids...)
+// SetSpec sets the "spec" field.
+func (ruo *RequestUpdateOne) SetSpec(ss schema.RequestSpec) *RequestUpdateOne {
+	ruo.mutation.SetSpec(ss)
 	return ruo
 }
 
-// AddService adds the "Service" edges to the Service entity.
-func (ruo *RequestUpdateOne) AddService(s ...*Service) *RequestUpdateOne {
-	ids := make([]uuid.UUID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return ruo.AddServiceIDs(ids...)
+// SetProjectID sets the "Project" edge to the Project entity by ID.
+func (ruo *RequestUpdateOne) SetProjectID(id uuid.UUID) *RequestUpdateOne {
+	ruo.mutation.SetProjectID(id)
+	return ruo
+}
+
+// SetProject sets the "Project" edge to the Project entity.
+func (ruo *RequestUpdateOne) SetProject(p *Project) *RequestUpdateOne {
+	return ruo.SetProjectID(p.ID)
+}
+
+// SetServiceID sets the "Service" edge to the Service entity by ID.
+func (ruo *RequestUpdateOne) SetServiceID(id uuid.UUID) *RequestUpdateOne {
+	ruo.mutation.SetServiceID(id)
+	return ruo
+}
+
+// SetService sets the "Service" edge to the Service entity.
+func (ruo *RequestUpdateOne) SetService(s *Service) *RequestUpdateOne {
+	return ruo.SetServiceID(s.ID)
 }
 
 // AddApprovalIDs adds the "Approvals" edge to the Approval entity by IDs.
@@ -482,46 +448,16 @@ func (ruo *RequestUpdateOne) Mutation() *RequestMutation {
 	return ruo.mutation
 }
 
-// ClearProject clears all "Project" edges to the Project entity.
+// ClearProject clears the "Project" edge to the Project entity.
 func (ruo *RequestUpdateOne) ClearProject() *RequestUpdateOne {
 	ruo.mutation.ClearProject()
 	return ruo
 }
 
-// RemoveProjectIDs removes the "Project" edge to Project entities by IDs.
-func (ruo *RequestUpdateOne) RemoveProjectIDs(ids ...uuid.UUID) *RequestUpdateOne {
-	ruo.mutation.RemoveProjectIDs(ids...)
-	return ruo
-}
-
-// RemoveProject removes "Project" edges to Project entities.
-func (ruo *RequestUpdateOne) RemoveProject(p ...*Project) *RequestUpdateOne {
-	ids := make([]uuid.UUID, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
-	}
-	return ruo.RemoveProjectIDs(ids...)
-}
-
-// ClearService clears all "Service" edges to the Service entity.
+// ClearService clears the "Service" edge to the Service entity.
 func (ruo *RequestUpdateOne) ClearService() *RequestUpdateOne {
 	ruo.mutation.ClearService()
 	return ruo
-}
-
-// RemoveServiceIDs removes the "Service" edge to Service entities by IDs.
-func (ruo *RequestUpdateOne) RemoveServiceIDs(ids ...uuid.UUID) *RequestUpdateOne {
-	ruo.mutation.RemoveServiceIDs(ids...)
-	return ruo
-}
-
-// RemoveService removes "Service" edges to Service entities.
-func (ruo *RequestUpdateOne) RemoveService(s ...*Service) *RequestUpdateOne {
-	ids := make([]uuid.UUID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
-	}
-	return ruo.RemoveServiceIDs(ids...)
 }
 
 // ClearApprovals clears all "Approvals" edges to the Approval entity.
@@ -620,10 +556,21 @@ func (ruo *RequestUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (ruo *RequestUpdateOne) check() error {
-	if v, ok := ruo.mutation.Name(); ok {
-		if err := request.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Request.name": %w`, err)}
+	if v, ok := ruo.mutation.GetType(); ok {
+		if err := request.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Request.type": %w`, err)}
 		}
+	}
+	if v, ok := ruo.mutation.RequestedBy(); ok {
+		if err := request.RequestedByValidator(v); err != nil {
+			return &ValidationError{Name: "requested_by", err: fmt.Errorf(`ent: validator failed for field "Request.requested_by": %w`, err)}
+		}
+	}
+	if _, ok := ruo.mutation.ProjectID(); ruo.mutation.ProjectCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Request.Project"`)
+	}
+	if _, ok := ruo.mutation.ServiceID(); ruo.mutation.ServiceCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Request.Service"`)
 	}
 	return nil
 }
@@ -663,19 +610,33 @@ func (ruo *RequestUpdateOne) sqlSave(ctx context.Context) (_node *Request, err e
 			}
 		}
 	}
-	if value, ok := ruo.mutation.Name(); ok {
+	if value, ok := ruo.mutation.GetType(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: request.FieldName,
+			Column: request.FieldType,
+		})
+	}
+	if value, ok := ruo.mutation.RequestedBy(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: request.FieldRequestedBy,
+		})
+	}
+	if value, ok := ruo.mutation.Spec(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeJSON,
+			Value:  value,
+			Column: request.FieldSpec,
 		})
 	}
 	if ruo.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   request.ProjectTable,
-			Columns: request.ProjectPrimaryKey,
+			Columns: []string{request.ProjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -683,34 +644,15 @@ func (ruo *RequestUpdateOne) sqlSave(ctx context.Context) (_node *Request, err e
 					Column: project.FieldID,
 				},
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ruo.mutation.RemovedProjectIDs(); len(nodes) > 0 && !ruo.mutation.ProjectCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   request.ProjectTable,
-			Columns: request.ProjectPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: project.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := ruo.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   request.ProjectTable,
-			Columns: request.ProjectPrimaryKey,
+			Columns: []string{request.ProjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -726,10 +668,10 @@ func (ruo *RequestUpdateOne) sqlSave(ctx context.Context) (_node *Request, err e
 	}
 	if ruo.mutation.ServiceCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   request.ServiceTable,
-			Columns: request.ServicePrimaryKey,
+			Columns: []string{request.ServiceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -737,34 +679,15 @@ func (ruo *RequestUpdateOne) sqlSave(ctx context.Context) (_node *Request, err e
 					Column: service.FieldID,
 				},
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ruo.mutation.RemovedServiceIDs(); len(nodes) > 0 && !ruo.mutation.ServiceCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: false,
-			Table:   request.ServiceTable,
-			Columns: request.ServicePrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: service.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := ruo.mutation.ServiceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   request.ServiceTable,
-			Columns: request.ServicePrimaryKey,
+			Columns: []string{request.ServiceColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

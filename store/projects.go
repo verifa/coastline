@@ -24,9 +24,9 @@ func (s *Store) QueryProjects(ps ...predicate.Project) (*oapi.ProjectsResp, erro
 	}, nil
 }
 
-func (s *Store) CreateProject(newProject *oapi.NewProject) (*oapi.Project, error) {
+func (s *Store) CreateProject(req *oapi.NewProject) (*oapi.Project, error) {
 	dbProject, err := s.client.Project.Create().
-		SetName(newProject.Name).
+		SetName(req.Name).
 		Save(s.ctx)
 	if err != nil {
 		return nil, fmt.Errorf("creating project: %w", err)

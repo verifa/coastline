@@ -14,7 +14,7 @@ import (
 func TestApi(t *testing.T) {
 
 	var (
-		module = "github.com/verifa/coastline/server/api"
+		module = "github.com/verifa/coastline/server/cuehack"
 		dir    = "."
 	)
 	buildInstances := load.Instances([]string{module}, &load.Config{

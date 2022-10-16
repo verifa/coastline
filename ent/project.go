@@ -4,11 +4,11 @@ package ent
 
 import (
 	"fmt"
-	"github.com/verifa/coastline/ent/project"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/ent/project"
 )
 
 // Project is the model entity for the Project schema.

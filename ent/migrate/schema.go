@@ -48,13 +48,31 @@ var (
 	// RequestsColumns holds the columns for the "requests" table.
 	RequestsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "type", Type: field.TypeString},
+		{Name: "requested_by", Type: field.TypeString},
+		{Name: "spec", Type: field.TypeJSON},
+		{Name: "request_project", Type: field.TypeUUID},
+		{Name: "request_service", Type: field.TypeUUID},
 	}
 	// RequestsTable holds the schema information for the "requests" table.
 	RequestsTable = &schema.Table{
 		Name:       "requests",
 		Columns:    RequestsColumns,
 		PrimaryKey: []*schema.Column{RequestsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "requests_projects_Project",
+				Columns:    []*schema.Column{RequestsColumns[4]},
+				RefColumns: []*schema.Column{ProjectsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "requests_services_Service",
+				Columns:    []*schema.Column{RequestsColumns[5]},
+				RefColumns: []*schema.Column{ServicesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 		Indexes: []*schema.Index{
 			{
 				Name:    "request_id",
@@ -106,56 +124,6 @@ var (
 			},
 		},
 	}
-	// RequestProjectColumns holds the columns for the "request_Project" table.
-	RequestProjectColumns = []*schema.Column{
-		{Name: "request_id", Type: field.TypeUUID},
-		{Name: "project_id", Type: field.TypeUUID},
-	}
-	// RequestProjectTable holds the schema information for the "request_Project" table.
-	RequestProjectTable = &schema.Table{
-		Name:       "request_Project",
-		Columns:    RequestProjectColumns,
-		PrimaryKey: []*schema.Column{RequestProjectColumns[0], RequestProjectColumns[1]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "request_Project_request_id",
-				Columns:    []*schema.Column{RequestProjectColumns[0]},
-				RefColumns: []*schema.Column{RequestsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-			{
-				Symbol:     "request_Project_project_id",
-				Columns:    []*schema.Column{RequestProjectColumns[1]},
-				RefColumns: []*schema.Column{ProjectsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-	}
-	// RequestServiceColumns holds the columns for the "request_Service" table.
-	RequestServiceColumns = []*schema.Column{
-		{Name: "request_id", Type: field.TypeUUID},
-		{Name: "service_id", Type: field.TypeUUID},
-	}
-	// RequestServiceTable holds the schema information for the "request_Service" table.
-	RequestServiceTable = &schema.Table{
-		Name:       "request_Service",
-		Columns:    RequestServiceColumns,
-		PrimaryKey: []*schema.Column{RequestServiceColumns[0], RequestServiceColumns[1]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "request_Service_request_id",
-				Columns:    []*schema.Column{RequestServiceColumns[0]},
-				RefColumns: []*schema.Column{RequestsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-			{
-				Symbol:     "request_Service_service_id",
-				Columns:    []*schema.Column{RequestServiceColumns[1]},
-				RefColumns: []*schema.Column{ServicesColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ApprovalsTable,
@@ -163,16 +131,12 @@ var (
 		RequestsTable,
 		ServicesTable,
 		ApprovalRequestTable,
-		RequestProjectTable,
-		RequestServiceTable,
 	}
 )
 
 func init() {
+	RequestsTable.ForeignKeys[0].RefTable = ProjectsTable
+	RequestsTable.ForeignKeys[1].RefTable = ServicesTable
 	ApprovalRequestTable.ForeignKeys[0].RefTable = ApprovalsTable
 	ApprovalRequestTable.ForeignKeys[1].RefTable = RequestsTable
-	RequestProjectTable.ForeignKeys[0].RefTable = RequestsTable
-	RequestProjectTable.ForeignKeys[1].RefTable = ProjectsTable
-	RequestServiceTable.ForeignKeys[0].RefTable = RequestsTable
-	RequestServiceTable.ForeignKeys[1].RefTable = ServicesTable
 }

@@ -1,1 +1,1 @@
-module: "github.com/verifa/coastline/server/api"
+module: "github.com/verifa/coastline/server/cuehack"

@@ -5,12 +5,12 @@ package ent
 import (
 	"context"
 	"fmt"
-	"github.com/verifa/coastline/ent/predicate"
-	"github.com/verifa/coastline/ent/service"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/verifa/coastline/ent/predicate"
+	"github.com/verifa/coastline/ent/service"
 )
 
 // ServiceDelete is the builder for deleting a Service entity.
