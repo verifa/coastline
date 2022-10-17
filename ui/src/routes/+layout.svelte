@@ -18,8 +18,8 @@
    
     
     const http = createHttpStore<UserResponse>()
-        
-    const isLoginPage = (): boolean => {
+    
+    $: isLoginPage = (): boolean => {
         return $page.url.pathname === "/login"
     }
         

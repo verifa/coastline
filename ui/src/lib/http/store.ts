@@ -7,11 +7,13 @@ export interface Response<Data> {
     status?: number
     text?: string
     error?: Error
+    redirected?: boolean
 }
 
 export function createHttpStore<Data>() {
     const store = writable<Response<Data>>({
-        fetching: true
+        fetching: true,
+        ok: false
     })
 
     function request(method: string, path: string, params?: Record<string, string>, data?: object) {
@@ -23,7 +25,8 @@ export function createHttpStore<Data>() {
             return value;
         });
 
-        let url = "http://localhost:3000" + "/api/v1" + path
+        // let url = "http://localhost:3000" + "/api/v1" + path
+        let url = "/api/v1" + path
         const headers = {
             "Content-type": "application/json"
         }
@@ -35,7 +38,7 @@ export function createHttpStore<Data>() {
 
         fetch(url, {
             method, body, headers,
-            // TODO: this could be same-site when running on the same site
+            // TODO: this could be same-origin when running on the same site
             credentials: 'include'
         }).then((response) => {
             if (!response.ok) {
@@ -49,12 +52,30 @@ export function createHttpStore<Data>() {
                     })
                 })
             } else {
+                if (response.redirected) {
+                    store.update((value) => {
+                        value.ok = response.ok
+                        value.status = response.status
+                        value.redirected = response.redirected
+
+                        return value
+                    })
+
+                    return
+                }
                 response.json().then((data) => {
                     store.update((value) => {
                         value.fetching = false
                         value.status = response.status
                         value.ok = response.ok
                         value.data = data
+                        return value
+                    })
+                }).catch((error) => {
+                    store.update((value) => {
+                        value.fetching = false
+                        value.error = error
+                        value.text = "Error converting response to JSON"
                         return value
                     })
                 })

@@ -10,4 +10,4 @@
 
 <h1>Login</h1>
 
-<a href="http://localhost:3000/api/v1/login">Login</a>
+<a href="/api/v1/login">Login</a>
