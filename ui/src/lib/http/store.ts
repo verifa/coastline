@@ -41,26 +41,14 @@ export function createHttpStore<Data>() {
             // TODO: this could be same-origin when running on the same site
             credentials: 'include'
         }).then((response) => {
-            if (!response.ok) {
-                response.text().then((text) => {
-                    store.update((value) => {
-                        value.fetching = false
-                        value.status = response.status
-                        value.ok = response.ok
-                        value.text = text
-                        return value
-                    })
-                })
-            } else {
+            if (response.ok) {
                 if (response.redirected) {
                     store.update((value) => {
                         value.ok = response.ok
                         value.status = response.status
                         value.redirected = response.redirected
-
                         return value
                     })
-
                     return
                 }
                 response.json().then((data) => {
@@ -76,6 +64,24 @@ export function createHttpStore<Data>() {
                         value.fetching = false
                         value.error = error
                         value.text = "Error converting response to JSON"
+                        return value
+                    })
+                })
+            } else {
+                console.log("response not ok")
+                response.text().then((text) => {
+                    store.update((value) => {
+                        value.fetching = false
+                        value.status = response.status
+                        value.ok = response.ok
+                        value.text = text
+                        return value
+                    })
+                }).catch((error) => {
+                    store.update((value) => {
+                        value.fetching = false
+                        value.error = error
+                        value.text = "Error converting response to text"
                         return value
                     })
                 })

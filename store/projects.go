@@ -14,9 +14,9 @@ func (s *Store) QueryProjects(ps ...predicate.Project) (*oapi.ProjectsResp, erro
 		return nil, fmt.Errorf("querying projects: %w", err)
 	}
 
-	var projects []oapi.Project
-	for _, dbProject := range dbProjects {
-		projects = append(projects, dbProjectToAPI(dbProject))
+	var projects = make([]oapi.Project, len(dbProjects))
+	for i, dbProject := range dbProjects {
+		projects[i] = dbProjectToAPI(dbProject)
 	}
 
 	return &oapi.ProjectsResp{

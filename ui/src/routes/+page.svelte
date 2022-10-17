@@ -1,36 +1,21 @@
 <script lang="ts">
 	import type { components } from '$lib/oapi/spec';
 	import { createHttpStore } from '$lib/http/store';
-	import { user } from '$lib/auth/store'
-	import { goto } from '$app/navigation';
+	import { session } from '$lib/session/store'
 
 	type ProjectsResp = components["schemas"]["ProjectsResp"]
 	type ServicesResp = components["schemas"]["ServicesResp"]
 
 	const projectStore = createHttpStore<ProjectsResp>()
 	const serviceStore = createHttpStore<ServicesResp>()
-	const logoutStore = createHttpStore()
 
 	projectStore.get("/projects")
 	serviceStore.get("/services")
 
-	function handleLogin() {
-		logoutStore.get("/login")
-	}
-	function handleLogout() {
-		logoutStore.get("/logout")
-		logoutStore.subscribe((value) => {
-			if (value.ok) {
-				goto("/login")
-			}
-		})
-	}
+	
 </script>
 
-<h1>Welcome {$user.email}!</h1>
-
-<button on:click={handleLogin}>Login</button>
-<button on:click={handleLogout}>Logout</button>
+<h1>Welcome {$session.user?.email}!</h1>
 
 {#if $projectStore.ok && $projectStore.data}
 	{#if $projectStore.data.projects.length === 0}

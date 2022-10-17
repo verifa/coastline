@@ -14,9 +14,9 @@ func (s *Store) QueryRequests(ps ...predicate.Request) (*oapi.RequestsResp, erro
 		return nil, fmt.Errorf("querying requests: %w", err)
 	}
 
-	var requests []oapi.Request
-	for _, dbRequest := range dbRequests {
-		requests = append(requests, dbRequestToAPI(dbRequest))
+	var requests = make([]oapi.Request, len(dbRequests))
+	for i, dbRequest := range dbRequests {
+		requests[i] = dbRequestToAPI(dbRequest)
 	}
 
 	return &oapi.RequestsResp{

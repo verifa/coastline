@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	
 
-	import {user} from '$lib/auth/store';
+	import {session} from '$lib/session/store';
 	import { createHttpStore } from '$lib/http/store';
-	import type { UserResponse } from '$lib/auth/user';
+	import type { UserResponse } from '$lib/session/session';
 	import { page } from '$app/stores';
 
     import TopAppBar, {
@@ -15,30 +14,55 @@
       AutoAdjust,
     } from '@smui/top-app-bar';
     import IconButton from '@smui/icon-button';
+    import Button, { Label } from '@smui/button';
    
     
-    const http = createHttpStore<UserResponse>()
+    const authStore = createHttpStore<UserResponse>()
+    const logoutStore = createHttpStore()
     
     $: isLoginPage = (): boolean => {
         return $page.url.pathname === "/login"
     }
+    authStore.subscribe((resp) => {
+        // Do nothing if request is in progress
+        if (resp.fetching) {
+            return
+        }
+        if (resp.ok && resp.data) {
+            session.login(resp.data.user)
+        } else if (resp.status === 401) {
+            session.logout()
+        }
+    })
+    authStore.get("/authenticate")
         
     onMount(()=> {
-        // Get preference for dark theme from browser
-        darkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if ("theme" in localStorage) {
+            const theme = localStorage["theme"]
+            if (theme === "dark") {
+                darkTheme = true
+            } else {
+                darkTheme = false
+            }
+        } else {
+            // Get preference for dark theme from browser
+            darkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
 
-        http.subscribe((resp) => {
-            if (resp.ok && resp.data) {
-                user.set(resp.data.user)
-            } else if (!resp.error) {
-                if (resp.status === 401) {
-                    if (!isLoginPage()) {
-                        goto("/login")
-                    }
+        // Subscribe to the session store to handle events if user is not authenticated
+        session.subscribe((session) => {
+            if (!session.initialized) {
+                return
+            } else if (!session.authenticated) {
+                if (!isLoginPage()) {
+                    goto("/login")
+                }
+            } else if (session.initialized && session.authenticated) {
+                if (isLoginPage()) {
+                    goto("/")
                 }
             }
         })
-        http.get("/authenticate")
     })
     
     let topAppBar: TopAppBar;
@@ -49,7 +73,18 @@
 
     function toggleMode() {
         darkTheme = !darkTheme
+        // Remember choice: store the theme setting in local storage
+        localStorage.setItem('theme', darkTheme ? 'dark' : 'light');
     }
+
+    function handleLogout() {
+		logoutStore.get("/logout")
+		logoutStore.subscribe((value) => {
+			if (value.ok) {
+				session.logout()
+			}
+		})
+	}
 
 </script>
 
@@ -60,23 +95,28 @@
         <Title>Fixed</Title>
       </Section>
       <Section align={"end"}>
+        <!-- Light/Dark mode -->
         <IconButton
-        aria-label="{modeLabel}"
-        class="material-icons"
-        on:click="{toggleMode}"
-        title="{modeLabel}"
-      >{modeIcon}
-    </IconButton>
+            aria-label="{modeLabel}"
+            class="material-icons"
+            on:click={toggleMode}
+            title="{modeLabel}"
+        >
+            {modeIcon}
+        </IconButton>
+        <Button color="secondary" on:click={handleLogout}>
+            <Label>Logout</Label>
+        </Button>
     </Section>
     </Row>
 </TopAppBar>
 <AutoAdjust {topAppBar}>
 
-{#if $http.fetching}
+{#if $authStore.fetching}
     <h2>Authenticating...</h2>
-{:else if $http.error}
-    <h2>Error: {$http.error.message}</h2>
-{:else if $http.ok}
+{:else if $authStore.error}
+    <h2>Error: {$authStore.error.message}</h2>
+{:else if $authStore.ok}
 	<slot/>
 {:else if isLoginPage()}
 	<slot/>
@@ -85,10 +125,8 @@
 
 <svelte:head>
   {#if darkTheme}
-    <!-- TODO: toggle dark theme at a later date... -->
-    <!-- <link rel="stylesheet" href="/smui-dark.css" media="screen" /> -->
-    <link rel="stylesheet" href="/smui.css" />
-  {:else}
-    <link rel="stylesheet" href="/smui.css" />
+	<link rel="stylesheet" href="/smui-dark.css"/>
+    {:else}
+    <link rel="stylesheet" href="/smui.css"  />
     {/if}
 </svelte:head>

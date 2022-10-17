@@ -1,4 +1,10 @@
 
+export interface Session {
+    initialized: boolean
+    authenticated: boolean
+    user?: User
+}
+
 export interface UserResponse {
     user: User
 }
