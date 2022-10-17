@@ -57,6 +57,8 @@ to quickly create a Cobra application.`,
 func init() {
 	rootCmd.AddCommand(serverCmd)
 
+	serverCmd.Flags().BoolVarP(&serverConfig.DevMode, "dev", "d", false, "Enable dev mode")
+
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command

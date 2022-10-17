@@ -26,7 +26,18 @@ type ContextKey string
 
 var contextKey ContextKey = "AUTH_CONTEXT"
 
-func newAuthProvider(ctx context.Context) (*authProvider, error) {
+func newAuthProvider(ctx context.Context, devMode bool) (*authProvider, error) {
+	sessioner := newSessioner()
+	police := NewPolicyEngine()
+
+	if devMode {
+		return &authProvider{
+			ctx:       ctx,
+			sessioner: sessioner,
+			police:    police,
+			devMode:   devMode,
+		}, nil
+	}
 	provider, err := oidc.NewProvider(ctx, issuer)
 	if err != nil {
 		return nil, fmt.Errorf("creating OIDC provider: %w", err)
@@ -42,9 +53,6 @@ func newAuthProvider(ctx context.Context) (*authProvider, error) {
 		RedirectURL:  "http://localhost:3000/api/v1/auth/callback",
 		Scopes:       []string{oidc.ScopeOpenID, "openid", "profile", "preferred_username", "email", "groups"},
 	}
-
-	sessioner := newSessioner()
-	police := NewPolicyEngine()
 
 	return &authProvider{
 		ctx:       ctx,
@@ -63,6 +71,7 @@ type authProvider struct {
 	config    *oauth2.Config
 	sessioner *Sessioner
 	police    *PolicyEngine
+	devMode   bool
 }
 
 func (p authProvider) authenticateMiddleware(next http.Handler) http.Handler {
@@ -123,6 +132,16 @@ func (p authProvider) handleAuthenticate(w http.ResponseWriter, r *http.Request)
 func (p authProvider) handleLogin(w http.ResponseWriter, r *http.Request) {
 	state := uuid.New().String()
 	nonce := uuid.New().String()
+	if p.devMode {
+		p.sessioner.NewSession(w, &UserClaims{
+			UserID: "dev",
+			Email:  "dev@dev.dev",
+			Name:   "dev",
+			Groups: []string{"dev"},
+		})
+		http.Redirect(w, r, "http://localhost:5173/", http.StatusSeeOther)
+		return
+	}
 	setCallbackCookie(w, r, "nonce", nonce)
 	setCallbackCookie(w, r, "state", state)
 	http.Redirect(w, r, p.config.AuthCodeURL(state, oidc.Nonce(nonce)), http.StatusFound)
@@ -185,7 +204,13 @@ func (p authProvider) handleAuthCallback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	p.sessioner.NewSession(w, idToken, userInfo)
+	var claims UserClaims
+	if err := userInfo.Claims(&claims); err != nil {
+		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+		return
+	}
+
+	p.sessioner.NewSession(w, &claims)
 	http.Redirect(w, r, "http://localhost:5173/", http.StatusSeeOther)
 }
 

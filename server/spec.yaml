@@ -280,6 +280,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /requestsspec:
+    get:
+      description: |
+        Return OpenAPI specification for request types
+      operationId: getRequestsSpec
+      responses:
+        "200":
+          description: request spec response
+          content:
+            application/json:
+              schema:
+                type: object
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   #   delete:
   #     description: deletes a single pet based on the ID supplied
   #     operationId: deletePet

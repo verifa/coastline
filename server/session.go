@@ -41,17 +41,12 @@ func newSessioner() *Sessioner {
 	}
 }
 
-func (s *Sessioner) NewSession(w http.ResponseWriter, idToken *oidc.IDToken, userInfo *oidc.UserInfo) {
+func (s *Sessioner) NewSession(w http.ResponseWriter, claims *UserClaims) {
 
 	sessionID := uuid.New()
 	session := Session{
-		ID:      sessionID,
-		IDToken: idToken,
-	}
-	var claims UserClaims
-	if err := userInfo.Claims(&claims); err != nil {
-		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
-		return
+		ID: sessionID,
+		// IDToken: idToken,
 	}
 
 	session.UserInfo = UserInfo{
@@ -68,20 +63,8 @@ func (s *Sessioner) NewSession(w http.ResponseWriter, idToken *oidc.IDToken, use
 		MaxAge:   int(time.Hour.Seconds()),
 		Path:     "/",
 	})
-	// sessionCookie, err := r.Cookie(s.cookieName)
-	// if err != nil {
-	// 	if !errors.Is(err, http.ErrNoCookie) {
-
-	// 	}
-	// }
-	// _, ok := s.sessions[sessionCookie.Value]
-	// if !ok {
-	// 	// No session exists, so re-create it
-
-	// }
-	// All is good, we have a token
-
 }
+
 func (s *Sessioner) EndSession(r *http.Request) error {
 	session, err := s.AuthorizeSession(r)
 	if err != nil {

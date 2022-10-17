@@ -1,16 +1,11 @@
 <script lang="ts">
+	import type { components } from '$lib/oapi/spec';
 	import { createHttpStore } from '$lib/http/store';
 	import { user } from '$lib/auth/store'
 
-	interface Project {
-		name: string
-	}
+	type ProjectsResp = components["schemas"]["ProjectsResp"]
 
-	interface ProjectResponse {
-		projects: Project[]
-	}
-
-	const projectStore = createHttpStore<ProjectResponse>()
+	const projectStore = createHttpStore<ProjectsResp>()
 	const logoutStore = createHttpStore()
 
 	projectStore.get("/projects")
@@ -40,6 +35,7 @@
 <h2>Loading...</h2>
 {/if}
 
+<a href="/requests/new">New Request</a>
 
 <button on:click={handleLogin}>Login</button>
 <button on:click={handleLogout}>Logout</button>

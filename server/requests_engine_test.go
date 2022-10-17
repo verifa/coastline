@@ -1,8 +1,11 @@
 package server
 
 import (
+	"bytes"
+	"encoding/json"
 	"testing"
 
+	"cuelang.org/go/encoding/openapi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/verifa/coastline/server/oapi"
@@ -14,6 +17,15 @@ func TestRequestsEngine(t *testing.T) {
 		ModuleRoot: "../examples/basic",
 	})
 	require.NoError(t, err)
+
+	{
+		b, err := openapi.Gen(e.instance, nil)
+		require.NoError(t, err)
+
+		var out bytes.Buffer
+		err = json.Indent(&out, b, "", "   ")
+		require.NoError(t, err)
+	}
 
 	tests := []struct {
 		req       oapi.NewRequest
@@ -39,6 +51,16 @@ func TestRequestsEngine(t *testing.T) {
 			},
 			expectErr: false,
 		},
+		{
+			req: oapi.NewRequest{
+				Type:        "InvalidJenkinsServerRequest",
+				RequestedBy: "someone",
+				Spec: map[string]interface{}{
+					"repo": "hello",
+				},
+			},
+			expectErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -51,7 +73,4 @@ func TestRequestsEngine(t *testing.T) {
 			}
 		})
 	}
-
-	// []oapi.NewRequest{
-	// }
 }

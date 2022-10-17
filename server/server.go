@@ -15,6 +15,7 @@ import (
 )
 
 type Config struct {
+	DevMode        bool
 	RequestsEngine RequestsEngineConfig
 }
 
@@ -34,7 +35,7 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 		return nil, fmt.Errorf("creating requests engine: %w", err)
 	}
 
-	provider, err := newAuthProvider(ctx)
+	provider, err := newAuthProvider(ctx, config.DevMode)
 	if err != nil {
 		return nil, fmt.Errorf("creating authentication provider: %w", err)
 	}
@@ -115,6 +116,7 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 			r.Get("/requests", wrapper.GetRequests)
 			r.Post("/requests", wrapper.CreateRequest)
 			r.Post("/requests/{id}", wrapper.GetRequestByID)
+			r.Get("/requestsspec", wrapper.GetRequestsSpec)
 		})
 	})
 
@@ -133,6 +135,11 @@ func returnJSON(w http.ResponseWriter, obj interface{}) {
 	if err != nil {
 		http.Error(w, "Creating JSON response: "+err.Error(), http.StatusInternalServerError)
 	}
+	w.Header().Set("Content-Type", "text/json; charset=utf-8")
+	w.Write(b)
+}
+
+func returnBytesAsJSON(w http.ResponseWriter, b []byte) {
 	w.Header().Set("Content-Type", "text/json; charset=utf-8")
 	w.Write(b)
 }

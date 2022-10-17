@@ -1,24 +1,22 @@
 package basic
 
 #Request: #ArtifactoryRepoRequest | #JenkinsServerRequest
-// request:  #Request
 
-#BaseRequest: {
-	project_id:   string
-	service_id:   string
-	requested_by: string
+#metadata: {
+	name:      string
+	namespace: string
 }
 
 #ArtifactoryRepoRequest: {
-	#BaseRequest
-	type: "ArtifactoryRepoRequest"
+	type:    "ArtifactoryRepoRequest"
+	service: "artifactory"
 	spec: {
-		repo: string
+		repo:     string
+		metadata: #metadata
 	}
 }
 
 #JenkinsServerRequest: {
-	#BaseRequest
 	type: "JenkinsServerRequest"
 	spec: {
 		name: string

@@ -43,3 +43,8 @@ func (s *ServerImpl) GetRequestByID(w http.ResponseWriter, r *http.Request, id u
 	}
 	returnJSON(w, resp.Requests[0])
 }
+
+func (s *ServerImpl) GetRequestsSpec(w http.ResponseWriter, r *http.Request) {
+	spec := s.engine.OpenAPISpec()
+	returnBytesAsJSON(w, spec)
+}
