@@ -1,4 +1,5 @@
 <script lang="ts">
+	import '../app.postcss';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 
@@ -85,7 +86,7 @@
 	<Row>
 		<Section>
 			<IconButton class="material-icons">menu</IconButton>
-			<a href="/"><Title>Coastline</Title></a>
+			<a href="/"><title>Coastline</title></a>
 		</Section>
 		<Section align={'end'}>
 			<!-- Light/Dark mode -->
@@ -98,7 +99,7 @@
 				{modeIcon}
 			</IconButton>
 			<Button on:click={handleLogout}>
-				<Label>Logout</Label>
+				<label>Logout</label>
 			</Button>
 		</Section>
 	</Row>

@@ -64,40 +64,42 @@
 	}
 </script>
 
-<!-- <p>{JSON.stringify(spec)}</p> -->
-
-{#each properties as prop}
-	{#if prop.schema.type == 'string'}
-		<Textfield
-			label={prop.name}
-			type={prop.schema.type}
-			required={prop.is_required}
-			bind:value={$store[prop.name]}
-		/>
-	{:else if prop.schema.type == 'number'}
-		<Textfield
-			label={prop.name}
-			type={prop.schema.type}
-			required={prop.is_required}
-			bind:value={$store[prop.name]}
-		/>
-	{:else if prop.schema.type == 'integer'}
-		<Textfield
-			label={prop.name}
-			type={'number'}
-			required={prop.is_required}
-			bind:value={$store[prop.name]}
-		/>
-	{:else if prop.schema.type == 'boolean'}
-		<FormField align={'end'}>
-			<Switch bind:checked={$store[prop.name]} />
-			<span slot="label">Fields of grain.</span>
-		</FormField>
-	{:else if prop.schema.type == 'array'}
-		TODO: handle Array...
-	{:else if prop.schema.type == 'object'}
-		<svelte:self {store} spec={prop.schema} />
-	{:else}
-		<h3>Error: unsupported type {prop.schema.type}</h3>
-	{/if}
-{/each}
+<div class="flex flex-col space-y-4">
+	{#each properties as prop}
+		{#if prop.schema.type == 'string'}
+			<Textfield
+				label={prop.name}
+				type={prop.schema.type}
+				required={prop.is_required}
+				bind:value={$store[prop.name]}
+			/>
+		{:else if prop.schema.type == 'number'}
+			<Textfield
+				label={prop.name}
+				type={prop.schema.type}
+				required={prop.is_required}
+				bind:value={$store[prop.name]}
+			/>
+		{:else if prop.schema.type == 'integer'}
+			<Textfield
+				label={prop.name}
+				type={'number'}
+				required={prop.is_required}
+				bind:value={$store[prop.name]}
+			/>
+		{:else if prop.schema.type == 'boolean'}
+			<div class="text-left">
+				<FormField align={'end'}>
+					<Switch bind:checked={$store[prop.name]} />
+					<span slot="label">Fields of grain.</span>
+				</FormField>
+			</div>
+		{:else if prop.schema.type == 'array'}
+			TODO: handle Array...
+		{:else if prop.schema.type == 'object'}
+			<svelte:self {store} spec={prop.schema} />
+		{:else}
+			<h3>Error: unsupported type {prop.schema.type}</h3>
+		{/if}
+	{/each}
+</div>
