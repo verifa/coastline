@@ -7,13 +7,17 @@
 
 	import type { OpenAPI3 } from 'openapi-typescript';
 	import type { components } from '$lib/oapi/spec';
+	import { writable } from 'svelte/store';
 
 	type ProjectsResp = components['schemas']['ProjectsResp'];
 	type ServicesResp = components['schemas']['ServicesResp'];
+	type NewRequest = components['schemas']['NewRequest'];
 
 	const projectStore = createHttpStore<ProjectsResp>();
 	const serviceStore = createHttpStore<ServicesResp>();
 	const specStore = createHttpStore<OpenAPI3>();
+
+	// const newRequest = writable<NewRequest>();
 
 	projectStore.get('/projects');
 	serviceStore.get('/services');
@@ -21,41 +25,46 @@
 
 	let specs: RequestSpec[];
 	let selectedRequest: number;
-	
-	let projectItems: Item[];
+
+	let specItems: Item[] = [];
+	let selectedSpec: Item;
+
+	let projectItems: Item[] = [];
 	let selectedProject: Item;
 
-	let serviceItems: Item[];
+	let serviceItems: Item[] = [];
+	let selectedService: Item;
 
 	specStore.subscribe((value) => {
 		if (value.ok && value.data) {
 			specs = getRequestSpecs(value.data);
+			specs.forEach((spec, index) => {
+				specItems.push({ index, id: spec.type, label: spec.type });
+			});
 		}
 	});
 
 	projectStore.subscribe((value) => {
 		if (value.ok && value.data) {
-			for(const project in value.data.projects) {
-				console.log("Foop")
-				console.log(project.name)
-				projectItems.push({id: project.id, label: project.name})
-				console.log(projectItems)
-			}
+			value.data.projects.forEach((project, index) => {
+				projectItems.push({ index, id: project.id, label: project.name });
+			});
 		}
 	});
 
 	serviceStore.subscribe((value) => {
 		if (value.ok && value.data) {
-			value.data.services.forEach(service => {
-				serviceItems.push({id: service.id, label: service.name})
+			value.data.services.forEach((service, index) => {
+				serviceItems.push({ index, id: service.id, label: service.name });
 			});
 		}
 	});
 
 	type Item = {
+		index: number;
 		id: string;
 		label: string;
-	}
+	};
 </script>
 
 <h1>New Request</h1>
@@ -65,9 +74,20 @@
 {:else if $projectStore.ok}
 	<Autocomplete
 		options={projectItems}
-		getOptionLabel={(item) => item ? item.label : 'N/A'}
+		getOptionLabel={(item) => (item ? item.label : '')}
 		bind:value={selectedProject}
 		label="Project"
+	/>
+{/if}
+
+{#if $serviceStore.fetching}
+	<h2>Loading services</h2>
+{:else if $serviceStore.ok}
+	<Autocomplete
+		options={serviceItems}
+		getOptionLabel={(item) => (item ? item.label : '')}
+		bind:value={selectedService}
+		label="Service"
 	/>
 {/if}
 
@@ -75,17 +95,12 @@
 	<h2>Loading</h2>
 {:else if $specStore.ok}
 	<h2>Form</h2>
-	<label for="type">Project:</label>
 	<Autocomplete
-		getOptionLabel={(item) => {
-			console.log('item: ', item);
-			return item ? item.type : '';
-		}}
-		options={specs}
-		label="Standard"
+		getOptionLabel={(item) => (item ? item.label : '')}
+		options={specItems}
+		label="Type"
 	/>
-	<!-- bind:value={valueStandard} -->
-	<select
+	<!-- <select
 		name="type"
 		id="type"
 		form="request"
@@ -100,5 +115,5 @@
 	{#if selectedRequest >= 0}
 		<h3>Render custom form here...</h3>
 		<pre>{JSON.stringify(specs[selectedRequest].spec)}</pre>
-	{/if}
+	{/if} -->
 {/if}
