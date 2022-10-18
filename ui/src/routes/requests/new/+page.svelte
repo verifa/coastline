@@ -7,7 +7,8 @@
 
 	import type { OpenAPI3 } from 'openapi-typescript';
 	import type { components } from '$lib/oapi/spec';
-	import { writable } from 'svelte/store';
+	import SpecForm from './specForm.svelte';
+	import Textfield from '@smui/textfield';
 
 	type ProjectsResp = components['schemas']['ProjectsResp'];
 	type ServicesResp = components['schemas']['ServicesResp'];
@@ -96,24 +97,14 @@
 {:else if $specStore.ok}
 	<h2>Form</h2>
 	<Autocomplete
-		getOptionLabel={(item) => (item ? item.label : '')}
+		required={true}
 		options={specItems}
+		getOptionLabel={(item) => (item ? item.label : '')}
+		bind:value={selectedSpec}
 		label="Type"
 	/>
-	<!-- <select
-		name="type"
-		id="type"
-		form="request"
-		bind:value={selectedRequest}
-		on:change={() => console.log(selectedRequest)}
-	>
-		<option value="-1" disabled selected>Select request</option>
-		{#each specs as spec, index}
-			<option value={index}>{spec.type}</option>
-		{/each}
-	</select>
-	{#if selectedRequest >= 0}
-		<h3>Render custom form here...</h3>
-		<pre>{JSON.stringify(specs[selectedRequest].spec)}</pre>
-	{/if} -->
+
+	{#if selectedSpec && selectedSpec.index >= 0}
+		<SpecForm spec={specs[selectedSpec.index].spec} />
+	{/if}
 {/if}
