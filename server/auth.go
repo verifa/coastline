@@ -135,7 +135,7 @@ func (p authProvider) handleLogin(w http.ResponseWriter, r *http.Request) {
 	if p.devMode {
 		p.sessioner.NewSession(w, &UserClaims{
 			UserID: "dev",
-			Email:  "dev@dev.dev",
+			Email:  "dev@localhost",
 			Name:   "dev",
 			Groups: []string{"dev"},
 		})
