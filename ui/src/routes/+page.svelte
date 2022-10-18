@@ -1,18 +1,16 @@
 <script lang="ts">
 	import type { components } from '$lib/oapi/spec';
 	import { createHttpStore } from '$lib/http/store';
-	import { session } from '$lib/session/store'
+	import { session } from '$lib/session/store';
 
-	type ProjectsResp = components["schemas"]["ProjectsResp"]
-	type ServicesResp = components["schemas"]["ServicesResp"]
+	type ProjectsResp = components['schemas']['ProjectsResp'];
+	type ServicesResp = components['schemas']['ServicesResp'];
 
-	const projectStore = createHttpStore<ProjectsResp>()
-	const serviceStore = createHttpStore<ServicesResp>()
+	const projectStore = createHttpStore<ProjectsResp>();
+	const serviceStore = createHttpStore<ServicesResp>();
 
-	projectStore.get("/projects")
-	serviceStore.get("/services")
-
-	
+	projectStore.get('/projects');
+	serviceStore.get('/services');
 </script>
 
 <h1>Welcome {$session.user?.email}!</h1>
@@ -38,7 +36,7 @@
 {#if $serviceStore.ok && $serviceStore.data}
 	{#if $serviceStore.data.services.length === 0}
 		<h2>No services...</h2>
-		{:else}
+	{:else}
 		<h2>Services list</h2>
 		<ul>
 			{#each $serviceStore.data.services as service}

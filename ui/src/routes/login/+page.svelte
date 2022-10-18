@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createHttpStore } from '$lib/http/store';
 
-	const loginStore = createHttpStore()
+	const loginStore = createHttpStore();
 
 	// function handleLogin() {
 	// 	loginStore.get("/login")
