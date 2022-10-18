@@ -45,9 +45,19 @@ func (s *Store) Close() error {
 
 // init populates the database with some initial data
 func (s *Store) init() error {
-	_, err := s.client.Project.Create().SetName("default").Save(s.ctx)
-	if err != nil {
-		return fmt.Errorf("creating project: %w", err)
+	// TODO: this is really hacky as it doesn't check if the data already exists
+	// so if using persistent data it will fail...
+	{
+		_, err := s.client.Project.Create().SetName("dummy-project").Save(s.ctx)
+		if err != nil {
+			return fmt.Errorf("creating project: %w", err)
+		}
+	}
+	{
+		_, err := s.client.Service.Create().SetName("dummy-service").Save(s.ctx)
+		if err != nil {
+			return fmt.Errorf("creating service: %w", err)
+		}
 	}
 
 	return nil
