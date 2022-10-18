@@ -3,10 +3,12 @@
 	import Textfield from '@smui/textfield';
 	import Switch from '@smui/switch';
 	import FormField from '@smui/form-field';
+	import List, { Item, Graphic, Separator, Text } from '@smui/list';
 	import type { Writable } from 'svelte/store';
+	import IconButton from '@smui/icon-button';
 
 	export let spec: SchemaObject;
-	export let store: Writable<Record<string, any>>;
+	export let store: Writable<{ [key: string]: any }>;
 
 	type Property = {
 		name: string;
@@ -64,7 +66,7 @@
 	}
 </script>
 
-<div class="flex flex-col space-y-4">
+<div class="ml-4 flex flex-col space-y-4">
 	{#each properties as prop}
 		{#if prop.schema.type == 'string'}
 			<Textfield
@@ -95,8 +97,39 @@
 				</FormField>
 			</div>
 		{:else if prop.schema.type == 'array'}
-			TODO: handle Array...
+			<div>
+				<div class="flex items-center">
+					<p>{prop.name}</p>
+					<IconButton
+						type="button"
+						class="material-icons"
+						on:click={() => {
+							store.update((value) => {
+								// TODO: need to know what kind of value
+								value[prop.name].push('');
+								return value;
+							});
+						}}>add</IconButton
+					>
+				</div>
+				<List>
+					{#each $store[prop.name] as item, index}
+						<Item
+							on:SMUI:action={() => {
+								store.update((value) => {
+									value[prop.name].splice(index, 1);
+									return value;
+								});
+							}}
+						>
+							<Graphic class="material-icons">clear</Graphic>
+							<Text>{item}</Text>
+						</Item>
+					{/each}
+				</List>
+			</div>
 		{:else if prop.schema.type == 'object'}
+			<p>{prop.name}:</p>
 			<svelte:self {store} spec={prop.schema} />
 		{:else}
 			<h3>Error: unsupported type {prop.schema.type}</h3>

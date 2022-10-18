@@ -18,7 +18,7 @@
 	const projectStore = createHttpStore<ProjectsResp>();
 	const serviceStore = createHttpStore<ServicesResp>();
 	const requestsStore = createHttpStore<OpenAPI3>();
-	const specStore = writable<{ [key: string]: string }>({});
+	const specStore = writable<{ [key: string]: any }>({});
 
 	specStore.subscribe((value) => {
 		console.log(value);
@@ -81,45 +81,47 @@
 		console.log($specStore);
 	}}
 >
-	{#if $projectStore.fetching}
-		<h2>Loading projects</h2>
-	{:else if $projectStore.ok}
-		<Autocomplete
-			options={projectItems}
-			getOptionLabel={(item) => (item ? item.label : '')}
-			bind:value={selectedProject}
-			label="Project"
-		/>
-	{/if}
-
-	{#if $serviceStore.fetching}
-		<h2>Loading services</h2>
-	{:else if $serviceStore.ok}
-		<Autocomplete
-			options={serviceItems}
-			getOptionLabel={(item) => (item ? item.label : '')}
-			bind:value={selectedService}
-			label="Service"
-		/>
-	{/if}
-
-	{#if $requestsStore.fetching}
-		<h2>Loading</h2>
-	{:else if $requestsStore.ok}
-		<h2>Form</h2>
-		<Autocomplete
-			required={true}
-			options={specItems}
-			getOptionLabel={(item) => (item ? item.label : '')}
-			bind:value={selectedSpec}
-			label="Type"
-		/>
-
-		{#if selectedSpec && selectedSpec.index >= 0}
-			<SpecForm store={specStore} spec={specs[selectedSpec.index].spec} />
-			<Button>
-				<Label>Default</Label>
-			</Button>
+	<div class="flex flex-col space-y-4">
+		{#if $projectStore.fetching}
+			<h2>Loading projects</h2>
+		{:else if $projectStore.ok}
+			<Autocomplete
+				options={projectItems}
+				getOptionLabel={(item) => (item ? item.label : '')}
+				bind:value={selectedProject}
+				label="Project"
+			/>
 		{/if}
-	{/if}
+
+		{#if $serviceStore.fetching}
+			<h2>Loading services</h2>
+		{:else if $serviceStore.ok}
+			<Autocomplete
+				options={serviceItems}
+				getOptionLabel={(item) => (item ? item.label : '')}
+				bind:value={selectedService}
+				label="Service"
+			/>
+		{/if}
+
+		{#if $requestsStore.fetching}
+			<h2>Loading</h2>
+		{:else if $requestsStore.ok}
+			<Autocomplete
+				required={true}
+				options={specItems}
+				getOptionLabel={(item) => (item ? item.label : '')}
+				bind:value={selectedSpec}
+				label="Type"
+			/>
+
+			{#if selectedSpec && selectedSpec.index >= 0}
+				<h2>Spec</h2>
+				<SpecForm store={specStore} spec={specs[selectedSpec.index].spec} />
+				<Button variant={'raised'} class="w-40">
+					<Label>Submit</Label>
+				</Button>
+			{/if}
+		{/if}
+	</div>
 </form>

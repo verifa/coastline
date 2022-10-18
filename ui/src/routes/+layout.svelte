@@ -86,7 +86,7 @@
 	<Row>
 		<Section>
 			<IconButton class="material-icons">menu</IconButton>
-			<a href="/"><title>Coastline</title></a>
+			<a href="/"><Title>Coastline</Title></a>
 		</Section>
 		<Section align={'end'}>
 			<!-- Light/Dark mode -->
@@ -99,21 +99,23 @@
 				{modeIcon}
 			</IconButton>
 			<Button on:click={handleLogout}>
-				<label>Logout</label>
+				<Label>Logout</Label>
 			</Button>
 		</Section>
 	</Row>
 </TopAppBar>
 <AutoAdjust {topAppBar}>
-	{#if $authStore.fetching}
-		<h2>Authenticating...</h2>
-	{:else if $authStore.error}
-		<h2>Error: {$authStore.error.message}</h2>
-	{:else if $authStore.ok}
-		<slot />
-	{:else if isLoginPage()}
-		<slot />
-	{/if}
+	<div class="relative mx-auto max-w-7xl md:px-8 xl:px-0">
+		{#if $authStore.fetching}
+			<h2>Authenticating...</h2>
+		{:else if $authStore.error}
+			<h2>Error: {$authStore.error.message}</h2>
+		{:else if $authStore.ok}
+			<slot />
+		{:else if isLoginPage()}
+			<slot />
+		{/if}
+	</div>
 </AutoAdjust>
 
 <svelte:head>
