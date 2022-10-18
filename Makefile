@@ -1,7 +1,6 @@
 fe-install:
 	cd ui && \
 	npm install && \
-	npm run prepare && \
 	npx openapi-typescript ../server/spec.yaml --output src/lib/oapi/spec.ts
 
 fe-dev:
