@@ -85,7 +85,7 @@
 	<Row>
 		<Section>
 			<IconButton class="material-icons">menu</IconButton>
-			<Title>Fixed</Title>
+			<a href="/"><Title>Coastline</Title></a>
 		</Section>
 		<Section align={'end'}>
 			<!-- Light/Dark mode -->
@@ -97,7 +97,7 @@
 			>
 				{modeIcon}
 			</IconButton>
-			<Button color="secondary" on:click={handleLogout}>
+			<Button on:click={handleLogout}>
 				<Label>Logout</Label>
 			</Button>
 		</Section>
@@ -117,7 +117,7 @@
 
 <svelte:head>
 	{#if darkTheme}
-		<link rel="stylesheet" href="/smui-dark.css" />
+		<link rel="stylesheet" href="/smui-dark.css" media="screen" />
 	{:else}
 		<link rel="stylesheet" href="/smui.css" />
 	{/if}
