@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
 	import { createHttpStore } from '$lib/http/store';
 	import type { components } from '$lib/oapi/spec';
+	import Button from '@smui/button';
+	import Textfield from '@smui/textfield';
 	import { writable } from 'svelte/store';
 
 	type NewProject = components['schemas']['NewProject'];
@@ -15,7 +18,7 @@
 
 	createProjectStore.subscribe((value) => {
 		if (value.ok) {
-			goto('/');
+			goto(`${base}`);
 		} else {
 			// TODO: something went wrong
 		}
@@ -30,7 +33,7 @@
 
 <form id="project" on:submit|preventDefault={handleOnSubmit}>
 	<label for="name">Name:</label><br />
-	<input type="text" id="name" name="name" bind:value={$store.name} /><br />
+	<Textfield type="text" id="name" name="name" bind:value={$store.name} /><br />
 
-	<button type="submit" form="project">Submit</button>
+	<Button type="submit" form="project">Submit</Button>
 </form>

@@ -68,7 +68,6 @@ export function createHttpStore<Data>() {
                     })
                 })
             } else {
-                console.log("response not ok")
                 response.text().then((text) => {
                     store.update((value) => {
                         value.fetching = false

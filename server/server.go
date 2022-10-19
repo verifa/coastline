@@ -1,13 +1,18 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/verifa/coastline/server/oapi"
 	"github.com/verifa/coastline/store"
+	"github.com/verifa/coastline/ui"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -16,12 +21,14 @@ import (
 
 type Config struct {
 	DevMode        bool
+	RedirectURI    string
 	RequestsEngine RequestsEngineConfig
 }
 
 func DefaultConfig() Config {
 	return Config{
 		RequestsEngine: DefaultRequestsEngineConfig(),
+		RedirectURI:    defaultEnv("CL_SERVER_REDIRECT_URI", "/ui"),
 	}
 }
 
@@ -35,7 +42,7 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 		return nil, fmt.Errorf("creating requests engine: %w", err)
 	}
 
-	provider, err := newAuthProvider(ctx, config.DevMode)
+	provider, err := newAuthProvider(ctx, config.DevMode, config.RedirectURI)
 	if err != nil {
 		return nil, fmt.Errorf("creating authentication provider: %w", err)
 	}
@@ -96,6 +103,7 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 
 		// TODO: replace with OpenAPI generated wrapper by adding to spec
 		r.Mount("/", provider.Routes())
+
 		r.Group(func(r chi.Router) {
 			// r.Use(provider.authenticateMiddleware)
 			//
@@ -120,7 +128,57 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 		})
 	})
 
+	// Setup frontend, if enabled (toggled via build tags)
+	if ui.Enabled {
+		// By default redirect the root path to ui
+		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/ui", http.StatusFound)
+		})
+		r.Mount("/ui", handleUI())
+	}
+
 	return r, nil
+}
+
+// handleUI returns a handler for our Single Page Application that checks if a
+// requested resource exists, and if it doesn't, returns the root index.html
+// (the single page).
+func handleUI() http.Handler {
+	index, err := ui.Site.Open("index.html")
+	if err != nil {
+		log.Fatal("Failed opening UI's index.html: " + err.Error())
+	}
+	var spaIndex bytes.Buffer
+	if _, err := spaIndex.ReadFrom(index); err != nil {
+		log.Fatal("Failed reading UI's index.html: " + err.Error())
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Strip the /ui prefix from the requested path to get the path to the
+		// requested resource as it would be on the backend filesystem.
+		path := strings.TrimPrefix(r.URL.Path, "/ui")
+		// If requesting the root page, we will end up with nothing left, so
+		// in that case we know it's the root page they were looking for
+		if path == "" {
+			w.WriteHeader(http.StatusAccepted)
+			w.Write(spaIndex.Bytes())
+			return
+		}
+		// Check if requested resource exists. If it does, treat it like a resource
+		// such as a .js or .css file with the full path including the filename.
+		// If it doesn't exist, it's a path without a filename and we should
+		// return our Single Page (index.html)
+		f, err := ui.Site.Open(path)
+		if os.IsNotExist(err) {
+			w.WriteHeader(http.StatusAccepted)
+			w.Write(spaIndex.Bytes())
+			return
+		} else if err != nil {
+			http.Error(w, "Error: opening requested path "+path+": "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer f.Close()
+		http.StripPrefix("/ui", http.FileServer(ui.Site)).ServeHTTP(w, r)
+	})
 }
 
 var _ oapi.ServerInterface = (*ServerImpl)(nil)
@@ -142,4 +200,12 @@ func returnJSON(w http.ResponseWriter, obj interface{}) {
 func returnBytesAsJSON(w http.ResponseWriter, b []byte) {
 	w.Header().Set("Content-Type", "text/json; charset=utf-8")
 	w.Write(b)
+}
+
+func defaultEnv(env string, value string) string {
+	e, ok := os.LookupEnv(env)
+	if ok {
+		return e
+	}
+	return value
 }

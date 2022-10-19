@@ -2,6 +2,7 @@
 	import type { components } from '$lib/oapi/spec';
 	import { createHttpStore } from '$lib/http/store';
 	import { session } from '$lib/session/store';
+	import { base } from '$app/paths';
 
 	type ProjectsResp = components['schemas']['ProjectsResp'];
 	type ServicesResp = components['schemas']['ServicesResp'];
@@ -26,7 +27,7 @@
 			{/each}
 		</ul>
 	{/if}
-	<a href="/projects/new">New project</a>
+	<a href="{base}/projects/new">New project</a>
 {:else if $projectStore.error}
 	<h2>Error: {$projectStore.error.message}</h2>
 {:else if $projectStore.fetching}
@@ -50,4 +51,4 @@
 	<h2>Loading services...</h2>
 {/if}
 
-<a href="/requests/new">New Request</a>
+<a href="{base}/requests/new">New Request</a>

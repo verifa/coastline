@@ -1,13 +1,12 @@
 <script lang="ts">
-	import { createHttpStore } from '$lib/http/store';
-
-	const loginStore = createHttpStore();
-
-	// function handleLogin() {
-	// 	loginStore.get("/login")
-	// }
+	import Button, { Label } from '@smui/button';
 </script>
 
 <h1>Login</h1>
 
-<a href="/api/v1/login">Login</a>
+<!--
+	Use link to login rather than API request so that redirects are handled properly
+ -->
+<Button href="/api/v1/login">
+	<Label>Login</Label>
+</Button>

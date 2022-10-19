@@ -11,12 +11,13 @@
 	import TopAppBar, { Row, Section, Title, AutoAdjust } from '@smui/top-app-bar';
 	import IconButton from '@smui/icon-button';
 	import Button, { Label } from '@smui/button';
+	import {base} from '$app/paths'
 
 	const authStore = createHttpStore<UserResponse>();
 	const logoutStore = createHttpStore();
 
 	$: isLoginPage = (): boolean => {
-		return $page.url.pathname === '/login';
+		return $page.url.pathname === `${base}/login`;
 	};
 	authStore.subscribe((resp) => {
 		// Do nothing if request is in progress
@@ -50,11 +51,11 @@
 				return;
 			} else if (!session.authenticated) {
 				if (!isLoginPage()) {
-					goto('/login');
+					goto(`${base}/login`);
 				}
 			} else if (session.initialized && session.authenticated) {
 				if (isLoginPage()) {
-					goto('/');
+					goto(`${base}`);
 				}
 			}
 		});
@@ -86,7 +87,7 @@
 	<Row>
 		<Section>
 			<IconButton class="material-icons">menu</IconButton>
-			<a href="/"><Title>Coastline</Title></a>
+			<a href="{base}"><Title>Coastline</Title></a>
 		</Section>
 		<Section align={'end'}>
 			<!-- Light/Dark mode -->
@@ -120,8 +121,8 @@
 
 <svelte:head>
 	{#if darkTheme}
-		<link rel="stylesheet" href="/smui-dark.css" media="screen" />
+		<link rel="stylesheet" href="{base}/smui-dark.css" media="screen" />
 	{:else}
-		<link rel="stylesheet" href="/smui.css" />
+		<link rel="stylesheet" href="{base}/smui.css" />
 	{/if}
 </svelte:head>

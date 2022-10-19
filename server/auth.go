@@ -26,16 +26,17 @@ type ContextKey string
 
 var contextKey ContextKey = "AUTH_CONTEXT"
 
-func newAuthProvider(ctx context.Context, devMode bool) (*authProvider, error) {
+func newAuthProvider(ctx context.Context, devMode bool, redirectURI string) (*authProvider, error) {
 	sessioner := newSessioner()
 	police := NewPolicyEngine()
 
 	if devMode {
 		return &authProvider{
-			ctx:       ctx,
-			sessioner: sessioner,
-			police:    police,
-			devMode:   devMode,
+			ctx:         ctx,
+			sessioner:   sessioner,
+			police:      police,
+			devMode:     devMode,
+			redirectURI: redirectURI,
 		}, nil
 	}
 	provider, err := oidc.NewProvider(ctx, issuer)
@@ -55,23 +56,25 @@ func newAuthProvider(ctx context.Context, devMode bool) (*authProvider, error) {
 	}
 
 	return &authProvider{
-		ctx:       ctx,
-		oidc:      provider,
-		verifier:  verifier,
-		config:    config,
-		sessioner: sessioner,
-		police:    police,
+		ctx:         ctx,
+		oidc:        provider,
+		verifier:    verifier,
+		config:      config,
+		sessioner:   sessioner,
+		police:      police,
+		redirectURI: redirectURI,
 	}, nil
 }
 
 type authProvider struct {
-	ctx       context.Context
-	oidc      *oidc.Provider
-	verifier  *oidc.IDTokenVerifier
-	config    *oauth2.Config
-	sessioner *Sessioner
-	police    *PolicyEngine
-	devMode   bool
+	ctx         context.Context
+	oidc        *oidc.Provider
+	verifier    *oidc.IDTokenVerifier
+	config      *oauth2.Config
+	sessioner   *Sessioner
+	police      *PolicyEngine
+	devMode     bool
+	redirectURI string
 }
 
 func (p authProvider) authenticateMiddleware(next http.Handler) http.Handler {
@@ -139,7 +142,7 @@ func (p authProvider) handleLogin(w http.ResponseWriter, r *http.Request) {
 			Name:   "dev",
 			Groups: []string{"dev"},
 		})
-		http.Redirect(w, r, "http://localhost:5173/", http.StatusSeeOther)
+		http.Redirect(w, r, p.redirectURI, http.StatusSeeOther)
 		return
 	}
 	setCallbackCookie(w, r, "nonce", nonce)
@@ -152,7 +155,7 @@ func (p authProvider) handleLogout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Cannot logout: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	http.Redirect(w, r, "http://localhost:5173/", http.StatusSeeOther)
+	http.Redirect(w, r, p.redirectURI, http.StatusSeeOther)
 }
 
 func (p authProvider) handleAuthCallback(w http.ResponseWriter, r *http.Request) {
@@ -211,7 +214,7 @@ func (p authProvider) handleAuthCallback(w http.ResponseWriter, r *http.Request)
 	}
 
 	p.sessioner.NewSession(w, &claims)
-	http.Redirect(w, r, "http://localhost:5173/", http.StatusSeeOther)
+	http.Redirect(w, r, p.redirectURI, http.StatusSeeOther)
 }
 
 func setCallbackCookie(w http.ResponseWriter, r *http.Request, name, value string) {
