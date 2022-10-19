@@ -19,7 +19,10 @@ package basic
 		defaultString: string | *"default"
 		array: [...string]
 		nested: {
-			nestedText: string
+			nestedText:        string
+			stringEnum:        "yes" | "no" | "maybe" | "perhaps"
+			numberEnum:        0 | 50 | 100
+			numberEnumDefault: 0 | *50 | 100
 		}
 	}
 }

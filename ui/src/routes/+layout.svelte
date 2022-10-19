@@ -105,7 +105,7 @@
 	</Row>
 </TopAppBar>
 <AutoAdjust {topAppBar}>
-	<div class="relative mx-auto max-w-7xl md:px-8 xl:px-0">
+	<div class="relative mx-auto max-w-full md:px-6 mt-6">
 		{#if $authStore.fetching}
 			<h2>Authenticating...</h2>
 		{:else if $authStore.error}

@@ -6,6 +6,7 @@
 	import List, { Item, Graphic, Separator, Text } from '@smui/list';
 	import type { Writable } from 'svelte/store';
 	import IconButton from '@smui/icon-button';
+	import Select, { Option } from '@smui/select';
 
 	export let spec: SchemaObject;
 	export let store: Writable<{ [key: string]: any }>;
@@ -68,7 +69,23 @@
 
 <div class="ml-4 flex flex-col space-y-4">
 	{#each properties as prop}
-		{#if prop.schema.type == 'string'}
+		{#if prop.schema.enum}
+			<!-- 
+				key field sets a function that makes sure each value is a string
+				which is a requirement of this component.
+			 -->
+			<Select
+				bind:value={$store[prop.name]}
+				label={prop.name}
+				required={prop.is_required}
+				key={(val) => String(val)}
+			>
+				{#each prop.schema.enum as item}
+					<Option value={item}>{item}</Option>
+				{/each}
+			</Select>
+			{prop.schema.enum}
+		{:else if prop.schema.type == 'string'}
 			<Textfield
 				label={prop.name}
 				type={prop.schema.type}
