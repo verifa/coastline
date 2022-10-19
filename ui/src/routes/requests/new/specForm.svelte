@@ -84,7 +84,6 @@
 					<Option value={item}>{item}</Option>
 				{/each}
 			</Select>
-			{prop.schema.enum}
 		{:else if prop.schema.type == 'string'}
 			<Textfield
 				label={prop.name}

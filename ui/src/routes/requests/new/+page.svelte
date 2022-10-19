@@ -17,18 +17,16 @@
 
 	const projectStore = createHttpStore<ProjectsResp>();
 	const serviceStore = createHttpStore<ServicesResp>();
-	const requestsStore = createHttpStore<OpenAPI3>();
+	const requestsSpecStore = createHttpStore<OpenAPI3>();
 	const specStore = writable<{ [key: string]: any }>({});
 
 	specStore.subscribe((value) => {
 		console.log(value);
 	});
 
-	// const newRequest = writable<NewRequest>();
-
 	projectStore.get('/projects');
 	serviceStore.get('/services');
-	requestsStore.get('/requestsspec');
+	requestsSpecStore.get('/requestsspec');
 
 	let specs: RequestSpec[];
 	let selectedRequest: number;
@@ -42,7 +40,7 @@
 	let serviceItems: Item[] = [];
 	let selectedService: Item;
 
-	requestsStore.subscribe((value) => {
+	requestsSpecStore.subscribe((value) => {
 		if (value.ok && value.data) {
 			specs = getRequestSpecs(value.data);
 			specs.forEach((spec, index) => {
@@ -104,9 +102,9 @@
 			/>
 		{/if}
 
-		{#if $requestsStore.fetching}
+		{#if $requestsSpecStore.fetching}
 			<h2>Loading</h2>
-		{:else if $requestsStore.ok}
+		{:else if $requestsSpecStore.ok}
 			<Autocomplete
 				required={true}
 				options={specItems}
