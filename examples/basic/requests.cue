@@ -17,7 +17,10 @@ package basic
 		integer:       uint8
 		boolean:       bool
 		defaultString: string | *"default"
-		array: [...string]
+		stringArray: [...string]
+		numberArray: [...number]
+		intArray: [...uint8]
+		nestedArray: [...[...string]]
 		nested: {
 			nestedText:        string
 			stringEnum:        "yes" | "no" | "maybe" | "perhaps"

@@ -7,7 +7,7 @@
 
 	import type { OpenAPI3 } from 'openapi-typescript';
 	import type { components } from '$lib/oapi/spec';
-	import SpecForm from './specForm.svelte';
+	import ObjectForm from './objectForm.svelte';
 	import { writable } from 'svelte/store';
 	import Button, { Label } from '@smui/button';
 
@@ -18,9 +18,15 @@
 	const projectStore = createHttpStore<ProjectsResp>();
 	const serviceStore = createHttpStore<ServicesResp>();
 	const requestsSpecStore = createHttpStore<OpenAPI3>();
-	const specStore = writable<{ [key: string]: any }>({});
+	const requestStore = writable<NewRequest>({
+		project_id: '',
+		service_id: '',
+		type: '',
+		requested_by: '',
+		spec: {}
+	});
 
-	specStore.subscribe((value) => {
+	requestStore.subscribe((value) => {
 		console.log(value);
 	});
 
@@ -29,7 +35,6 @@
 	requestsSpecStore.get('/requestsspec');
 
 	let specs: RequestSpec[];
-	let selectedRequest: number;
 
 	let specItems: Item[] = [];
 	let selectedSpec: Item;
@@ -76,7 +81,11 @@
 
 <form
 	on:submit|preventDefault={() => {
-		console.log($specStore);
+		$requestStore.project_id = selectedProject.id;
+		$requestStore.service_id = selectedService.id;
+		$requestStore.type = specs[selectedSpec.index].type;
+		console.log($requestStore);
+		// TODO: actually submit it!!
 	}}
 >
 	<div class="flex flex-col space-y-4">
@@ -106,16 +115,16 @@
 			<h2>Loading</h2>
 		{:else if $requestsSpecStore.ok}
 			<Autocomplete
-				required={true}
 				options={specItems}
 				getOptionLabel={(item) => (item ? item.label : '')}
 				bind:value={selectedSpec}
 				label="Type"
 			/>
+			<!-- TODO: when this changes we need to reset the store... -->
 
 			{#if selectedSpec && selectedSpec.index >= 0}
 				<h2>Spec</h2>
-				<SpecForm store={specStore} spec={specs[selectedSpec.index].spec} />
+				<ObjectForm bind:store={$requestStore.spec} spec={specs[selectedSpec.index].spec} />
 				<Button variant={'raised'} class="w-40">
 					<Label>Submit</Label>
 				</Button>
