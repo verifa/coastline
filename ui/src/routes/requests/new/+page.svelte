@@ -3,13 +3,10 @@
 	import { getRequestSpecs } from '$lib/oapi/parse';
 	import type { RequestSpec } from '$lib/oapi/parse';
 
-	import Autocomplete from '@smui-extra/autocomplete';
-
 	import type { OpenAPI3 } from 'openapi-typescript';
 	import type { components } from '$lib/oapi/spec';
 	import ObjectForm from './objectForm.svelte';
 	import { writable } from 'svelte/store';
-	import Button, { Label } from '@smui/button';
 
 	type ProjectsResp = components['schemas']['ProjectsResp'];
 	type ServicesResp = components['schemas']['ServicesResp'];
@@ -35,55 +32,19 @@
 	requestsSpecStore.get('/requestsspec');
 
 	let specs: RequestSpec[];
-
-	let specItems: Item[] = [];
-	let selectedSpec: Item;
-
-	let projectItems: Item[] = [];
-	let selectedProject: Item;
-
-	let serviceItems: Item[] = [];
-	let selectedService: Item;
+	let selectedSpec: RequestSpec;
 
 	requestsSpecStore.subscribe((value) => {
 		if (value.ok && value.data) {
 			specs = getRequestSpecs(value.data);
-			specs.forEach((spec, index) => {
-				specItems.push({ index, id: spec.type, label: spec.type });
-			});
 		}
 	});
-
-	projectStore.subscribe((value) => {
-		if (value.ok && value.data) {
-			value.data.projects.forEach((project, index) => {
-				projectItems.push({ index, id: project.id, label: project.name });
-			});
-		}
-	});
-
-	serviceStore.subscribe((value) => {
-		if (value.ok && value.data) {
-			value.data.services.forEach((service, index) => {
-				serviceItems.push({ index, id: service.id, label: service.name });
-			});
-		}
-	});
-
-	type Item = {
-		index: number;
-		id: string;
-		label: string;
-	};
 </script>
 
 <h1>New Request</h1>
 
 <form
 	on:submit|preventDefault={() => {
-		$requestStore.project_id = selectedProject.id;
-		$requestStore.service_id = selectedService.id;
-		$requestStore.type = specs[selectedSpec.index].type;
 		console.log($requestStore);
 		// TODO: actually submit it!!
 	}}
@@ -91,43 +52,58 @@
 	<div class="flex flex-col space-y-4">
 		{#if $projectStore.fetching}
 			<h2>Loading projects</h2>
-		{:else if $projectStore.ok}
-			<Autocomplete
-				options={projectItems}
-				getOptionLabel={(item) => (item ? item.label : '')}
-				bind:value={selectedProject}
-				label="Project"
-			/>
+		{:else if $projectStore.ok && $projectStore.data}
+			<div class="form-control w-full max-w-xs">
+				<label for="project" class="label">
+					<span class="label-text">Project</span>
+				</label>
+				<select id="project" class="select select-bordered" bind:value={$requestStore.project_id}>
+					<option disabled selected value={''}>Select project</option>
+					{#each $projectStore.data.projects as project}
+						<option value={project.id}>{project.name}</option>
+					{/each}
+				</select>
+			</div>
 		{/if}
 
 		{#if $serviceStore.fetching}
 			<h2>Loading services</h2>
-		{:else if $serviceStore.ok}
-			<Autocomplete
-				options={serviceItems}
-				getOptionLabel={(item) => (item ? item.label : '')}
-				bind:value={selectedService}
-				label="Service"
-			/>
+		{:else if $serviceStore.ok && $serviceStore.data}
+			<div class="form-control w-full max-w-xs">
+				<label for="service" class="label">
+					<span class="label-text">Service</span>
+				</label>
+				<select id="service" class="select select-bordered" bind:value={$requestStore.service_id}>
+					<option disabled selected value={''}>Select service</option>
+					{#each $serviceStore.data.services as service}
+						<option value={service.id}>{service.name}</option>
+					{/each}
+				</select>
+			</div>
 		{/if}
 
 		{#if $requestsSpecStore.fetching}
 			<h2>Loading</h2>
 		{:else if $requestsSpecStore.ok}
-			<Autocomplete
-				options={specItems}
-				getOptionLabel={(item) => (item ? item.label : '')}
-				bind:value={selectedSpec}
-				label="Type"
-			/>
+			<div class="form-control w-full max-w-xs">
+				<label for="request" class="label">
+					<span class="label-text">Request</span>
+				</label>
+				<select id="request" class="select select-bordered" bind:value={selectedSpec}>
+					<option disabled selected value={undefined}>Select request</option>
+					{#each specs as spec}
+						<option value={spec}>{spec.type}</option>
+					{/each}
+				</select>
+			</div>
 			<!-- TODO: when this changes we need to reset the store... -->
 
-			{#if selectedSpec && selectedSpec.index >= 0}
+			{#if selectedSpec}
 				<h2>Spec</h2>
-				<ObjectForm bind:store={$requestStore.spec} spec={specs[selectedSpec.index].spec} />
-				<Button variant={'raised'} class="w-40">
-					<Label>Submit</Label>
-				</Button>
+				<ObjectForm bind:store={$requestStore.spec} spec={selectedSpec.spec} />
+				<div>
+					<button class="btn btn-primary">Submit</button>
+				</div>
 			{/if}
 		{/if}
 	</div>

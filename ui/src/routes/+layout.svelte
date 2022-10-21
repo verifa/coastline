@@ -8,10 +8,8 @@
 	import type { UserResponse } from '$lib/session/session';
 	import { page } from '$app/stores';
 
-	import TopAppBar, { Row, Section, Title, AutoAdjust } from '@smui/top-app-bar';
-	import IconButton from '@smui/icon-button';
-	import Button, { Label } from '@smui/button';
-	import {base} from '$app/paths'
+	import { base } from '$app/paths';
+	import NavBar from './navBar.svelte';
 
 	const authStore = createHttpStore<UserResponse>();
 	const logoutStore = createHttpStore();
@@ -83,20 +81,23 @@
 	}
 </script>
 
-<TopAppBar bind:this={topAppBar} variant="fixed">
-	<Row>
-		<Section>
-			<IconButton class="material-icons">menu</IconButton>
-			<a href="{base}"><Title>Coastline</Title></a>
-		</Section>
-		<Section align={'end'}>
-			<!-- Light/Dark mode -->
-			<IconButton
+<!-- Configure TailwindCSS typographic defaults for whole site -->
+<div class="prose mx-auto max-w-full">
+	<NavBar />
+
+	<!-- <TopAppBar bind:this={topAppBar} variant="fixed">
+		<Row>
+			<Section>
+				<IconButton class="material-icons">menu</IconButton>
+				<a href={base}><Title>Coastline</Title></a>
+			</Section>
+			<Section align={'end'}>
+				<IconButton
 				aria-label={modeLabel}
 				class="material-icons"
 				on:click={toggleMode}
 				title={modeLabel}
-			>
+				>
 				{modeIcon}
 			</IconButton>
 			<Button on:click={handleLogout}>
@@ -104,8 +105,7 @@
 			</Button>
 		</Section>
 	</Row>
-</TopAppBar>
-<AutoAdjust {topAppBar}>
+</TopAppBar> -->
 	<div class="relative mx-auto max-w-full md:px-6 mt-6">
 		{#if $authStore.fetching}
 			<h2>Authenticating...</h2>
@@ -117,12 +117,12 @@
 			<slot />
 		{/if}
 	</div>
-</AutoAdjust>
+</div>
 
-<svelte:head>
+<!-- <svelte:head>
 	{#if darkTheme}
 		<link rel="stylesheet" href="{base}/smui-dark.css" media="screen" />
 	{:else}
 		<link rel="stylesheet" href="{base}/smui.css" />
 	{/if}
-</svelte:head>
+</svelte:head> -->

@@ -1,12 +1,11 @@
 <script lang="ts">
-	import Button, { Label } from '@smui/button';
+	import { goto } from '$app/navigation';
+
+	function handleLogin() {
+		goto('/api/v1/login');
+	}
 </script>
 
 <h1>Login</h1>
 
-<!--
-	Use link to login rather than API request so that redirects are handled properly
- -->
-<Button href="/api/v1/login">
-	<Label>Login</Label>
-</Button>
+<button class="btn btn-primary" on:click={handleLogin}>Login</button>

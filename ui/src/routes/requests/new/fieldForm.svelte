@@ -1,11 +1,7 @@
 <script lang="ts">
-	import IconButton from '@smui/icon-button';
-	import Textfield from '@smui/textfield';
 	import { getInitialPropValue, propFromSchema, type Property } from './spec';
-	import FormField from '@smui/form-field';
-	import Switch from '@smui/switch';
 	import ObjectForm from './objectForm.svelte';
-	import Select, { Option } from '@smui/select';
+	import Icon from '$lib/icons/Icon.svelte';
 
 	export let prop: Property;
 	export let store: any;
@@ -16,64 +12,93 @@
     key field sets a function that makes sure each value is a string
     which is a requirement of this component.
  -->
-	<Select
-		bind:value={store}
-		label={prop.name}
-		required={prop.is_required}
-		key={(val) => String(val)}
-	>
-		{#each prop.schema.enum as item}
-			<Option value={item}>{item}</Option>
-		{/each}
-	</Select>
+	<div class="form-control w-full max-w-xs">
+		<label class="label">
+			<span class="label-text">{prop.name}</span>
+			<select class="select select-bordered" bind:value={store}>
+				{#each prop.schema.enum as item}
+					<option>{item}</option>
+				{/each}
+			</select>
+		</label>
+	</div>
 {:else if prop.schema.type == 'string'}
-	<Textfield
-		label={prop.name}
-		type={prop.schema.type}
-		required={prop.is_required}
-		bind:value={store}
-	/>
+	<div class="form-control w-full max-w-xs">
+		<label class="label">
+			<span class="label-text">{prop.name}</span>
+			<input
+				type="text"
+				placeholder={prop.name}
+				class="input input-bordered w-full max-w-xs"
+				bind:value={store}
+				required={prop.is_required}
+			/>
+		</label>
+	</div>
 {:else if prop.schema.type == 'number'}
-	<Textfield
-		label={prop.name}
-		type={prop.schema.type}
-		required={prop.is_required}
-		bind:value={store}
-	/>
+	<div class="form-control w-full max-w-xs">
+		<label class="label">
+			<span class="label-text">{prop.name}</span>
+			<input
+				type="number"
+				placeholder={prop.name}
+				class="input input-bordered w-full max-w-xs"
+				bind:value={store}
+				required={prop.is_required}
+			/>
+		</label>
+	</div>
 {:else if prop.schema.type == 'integer'}
-	<Textfield label={prop.name} type={'number'} required={prop.is_required} bind:value={store} />
+	<div class="form-control w-full max-w-xs">
+		<label class="label">
+			<span class="label-text">{prop.name}</span>
+			<input
+				type="number"
+				placeholder={prop.name}
+				class="input input-bordered w-full max-w-xs"
+				bind:value={store}
+				required={prop.is_required}
+			/>
+		</label>
+	</div>
 {:else if prop.schema.type == 'boolean'}
-	<div class="text-left">
-		<FormField align={'end'}>
-			<Switch bind:checked={store} />
-			<span slot="label">Fields of grain.</span>
-		</FormField>
+	<div class="form-control">
+		<label class="label">
+			<span class="label-text w-20">{prop.name}</span>
+			<input type="checkbox" class="toggle" bind:checked={store} />
+		</label>
 	</div>
 {:else if prop.schema.type == 'array'}
-	<div class="flex items-center">
-		<p>{prop.name}</p>
-		<IconButton
-			type="button"
-			class="material-icons"
-			on:click={() => {
-				// Append without .push() as we need to trigger a reactive update
-				store = [...store, getInitialPropValue(prop.schema.items)];
-			}}>add</IconButton
-		>
+	<div class="">
+		<label class="flex items-center space-x-4">
+			<span class="label-text">{prop.name}</span>
+			<button
+				type="button"
+				class="btn btn-circle btn-xs"
+				on:click={() => {
+					// Append without .push() as we need to trigger a reactive update
+					store = [...store, getInitialPropValue(prop.schema.items)];
+				}}
+			>
+				<Icon name="add-mini" class="w-5 h-5" />
+			</button>
+		</label>
 	</div>
-	<ol>
+	<ol class="list-none">
 		{#each store as item, index}
 			<li>
-				<div class="flex items-center">
-					<IconButton
+				<div class="flex items-center space-x-4">
+					<button
 						type="button"
-						class="material-icons"
+						class="btn btn-circle btn-xs"
 						on:click={() => {
 							store.splice(index, 1);
 							// Need to reassign variable to trigger a reactive update
 							store = store;
-						}}>clear</IconButton
+						}}
 					>
+						<Icon name="x-mark-mini" class="w-5 h-5" />
+					</button>
 					<svelte:self
 						bind:store={item}
 						prop={propFromSchema(prop.name, prop.schema, prop.schema.items)}
@@ -83,7 +108,7 @@
 		{/each}
 	</ol>
 {:else if prop.schema.type == 'object'}
-	<p>{prop.name}:</p>
+	<span class="label-text">{prop.name}:</span>
 	<ObjectForm bind:store spec={prop.schema} />
 {:else}
 	<h3>Error: unsupported type {prop.schema.type}</h3>

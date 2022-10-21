@@ -5,7 +5,15 @@ const config = {
 		extend: {}
 	},
 
-	plugins: []
+	plugins: [
+		require('@tailwindcss/forms'),
+		require("@tailwindcss/typography"),
+		require("daisyui")
+	],
+	daisyui: {
+		themes: ["lofi", "dark"],
+	},
+
 };
 
 module.exports = config;

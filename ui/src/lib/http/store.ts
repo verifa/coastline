@@ -12,7 +12,7 @@ export interface Response<Data> {
 
 export function createHttpStore<Data>() {
     const store = writable<Response<Data>>({
-        fetching: true,
+        fetching: false,
         ok: false
     })
 
@@ -25,7 +25,6 @@ export function createHttpStore<Data>() {
             return value;
         });
 
-        // let url = "http://localhost:3000" + "/api/v1" + path
         let url = "/api/v1" + path
         const headers = {
             "Content-type": "application/json"
