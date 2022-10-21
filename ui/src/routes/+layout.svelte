@@ -12,7 +12,6 @@
 	import NavBar from './navBar.svelte';
 
 	const authStore = createHttpStore<UserResponse>();
-	const logoutStore = createHttpStore();
 
 	$: isLoginPage = (): boolean => {
 		return $page.url.pathname === `${base}/login`;
@@ -47,15 +46,6 @@
 			}
 		});
 	});
-
-	function handleLogout() {
-		logoutStore.get('/logout');
-		logoutStore.subscribe((value) => {
-			if (value.ok) {
-				session.logout();
-			}
-		});
-	}
 </script>
 
 <!-- Configure TailwindCSS typographic defaults for whole site -->
