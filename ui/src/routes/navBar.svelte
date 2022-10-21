@@ -17,7 +17,7 @@
 
 <div class="navbar bg-primary text-primary-content">
 	<div class="navbar-start">
-		<a href={base} class="btn btn-ghost normal-case text-xl">daisyUI</a>
+		<a href={base} class="btn btn-ghost normal-case text-xl">Coastline</a>
 	</div>
 
 	<div class="navbar-end">

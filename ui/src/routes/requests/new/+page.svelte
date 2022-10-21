@@ -66,7 +66,12 @@
 				<label for="project" class="label">
 					<span class="label-text">Project</span>
 				</label>
-				<select id="project" class="select select-bordered" bind:value={$requestStore.project_id}>
+				<select
+					id="project"
+					class="select select-bordered"
+					bind:value={$requestStore.project_id}
+					required
+				>
 					<option disabled selected value={''}>Select project</option>
 					{#each $projectStore.data.projects as project}
 						<option value={project.id}>{project.name}</option>
@@ -82,7 +87,12 @@
 				<label for="service" class="label">
 					<span class="label-text">Service</span>
 				</label>
-				<select id="service" class="select select-bordered" bind:value={$requestStore.service_id}>
+				<select
+					id="service"
+					class="select select-bordered"
+					bind:value={$requestStore.service_id}
+					required
+				>
 					<option disabled selected value={''}>Select service</option>
 					{#each $serviceStore.data.services as service}
 						<option value={service.id}>{service.name}</option>
