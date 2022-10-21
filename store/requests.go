@@ -9,7 +9,11 @@ import (
 )
 
 func (s *Store) QueryRequests(ps ...predicate.Request) (*oapi.RequestsResp, error) {
-	dbRequests, err := s.client.Request.Query().Where(ps...).All(s.ctx)
+	dbRequests, err := s.client.Request.Query().Where(ps...).
+		WithProject().
+		WithService().
+		All(s.ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("querying requests: %w", err)
 	}
@@ -40,11 +44,14 @@ func (s *Store) CreateRequest(req *oapi.NewRequest) (*oapi.Request, error) {
 }
 
 func dbRequestToAPI(dbRequest *ent.Request) oapi.Request {
+	project := dbProjectToAPI(dbRequest.Edges.Project)
+	service := dbServiceToAPI(dbRequest.Edges.Service)
 	return oapi.Request{
 		Id:          dbRequest.ID,
 		Type:        dbRequest.Type,
 		RequestedBy: dbRequest.RequestedBy,
 		Spec:        dbRequest.Spec,
-		// TODO: handle project_id and service_id
+		Project:     &project,
+		Service:     &service,
 	}
 }

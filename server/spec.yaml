@@ -387,9 +387,22 @@ components:
     #
     # Request types
     #
+    RequestCommon:
+      type: object
+      required:
+        - type
+        - requested_by
+        - spec
+      properties:
+        type:
+          type: string
+        requested_by:
+          type: string
+        spec:
+          type: object
     Request:
       allOf:
-        - $ref: "#/components/schemas/NewRequest"
+        - $ref: "#/components/schemas/RequestCommon"
         - type: object
           required:
             - id
@@ -400,33 +413,30 @@ components:
               x-go-type: uuid.UUID
               x-go-type-import:
                 path: github.com/google/uuid
+            project:
+              $ref: "#/components/schemas/Project"
+            service:
+              $ref: "#/components/schemas/Service"
     NewRequest:
-      type: object
-      required:
-        - type
-        - requested_by
-        - spec
-        - project_id
-        - service_id
-      properties:
-        type:
-          type: string
-        requested_by:
-          type: string
-        spec:
-          type: object
-        project_id:
-          type: string
-          format: uuid
-          x-go-type: uuid.UUID
-          x-go-type-import:
-            path: github.com/google/uuid
-        service_id:
-          type: string
-          format: uuid
-          x-go-type: uuid.UUID
-          x-go-type-import:
-            path: github.com/google/uuid
+      allOf:
+        - $ref: "#/components/schemas/RequestCommon"
+        - type: object
+          required:
+            - project_id
+            - service_id
+          properties:
+            project_id:
+              type: string
+              format: uuid
+              x-go-type: uuid.UUID
+              x-go-type-import:
+                path: github.com/google/uuid
+            service_id:
+              type: string
+              format: uuid
+              x-go-type: uuid.UUID
+              x-go-type-import:
+                path: github.com/google/uuid
 
     RequestsResp:
       type: object

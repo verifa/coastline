@@ -6,15 +6,19 @@
 	import type { OpenAPI3 } from 'openapi-typescript';
 	import type { components } from '$lib/oapi/spec';
 	import ObjectForm from './objectForm.svelte';
+	import { session } from '$lib/session/store';
 	import { writable } from 'svelte/store';
 
 	type ProjectsResp = components['schemas']['ProjectsResp'];
 	type ServicesResp = components['schemas']['ServicesResp'];
 	type NewRequest = components['schemas']['NewRequest'];
+	type Request = components['schemas']['Request'];
 
 	const projectStore = createHttpStore<ProjectsResp>();
 	const serviceStore = createHttpStore<ServicesResp>();
 	const requestsSpecStore = createHttpStore<OpenAPI3>();
+	const requestsSubmitStore = createHttpStore<Request>();
+
 	const requestStore = writable<NewRequest>({
 		project_id: '',
 		service_id: '',
@@ -39,16 +43,21 @@
 			specs = getRequestSpecs(value.data);
 		}
 	});
+
+	requestsSubmitStore.subscribe((value) => {
+		console.log(value);
+	});
+
+	function handleSubmit() {
+		$requestStore.type = selectedSpec.type;
+		$requestStore.requested_by = $session.user?.id ? $session.user?.id : 'anonymous';
+		requestsSubmitStore.post('/requests', {}, $requestStore);
+	}
 </script>
 
 <h1>New Request</h1>
 
-<form
-	on:submit|preventDefault={() => {
-		console.log($requestStore);
-		// TODO: actually submit it!!
-	}}
->
+<form on:submit|preventDefault={handleSubmit}>
 	<div class="flex flex-col space-y-4">
 		{#if $projectStore.fetching}
 			<h2>Loading projects</h2>

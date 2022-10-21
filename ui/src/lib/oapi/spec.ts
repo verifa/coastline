@@ -62,14 +62,18 @@ export interface components {
     ServicesResp: {
       services: components["schemas"]["Service"][];
     };
-    Request: components["schemas"]["NewRequest"] & {
-      /** Format: uuid */
-      id: string;
-    };
-    NewRequest: {
+    RequestCommon: {
       type: string;
       requested_by: string;
       spec: { [key: string]: unknown };
+    };
+    Request: components["schemas"]["RequestCommon"] & {
+      /** Format: uuid */
+      id: string;
+      project?: components["schemas"]["Project"];
+      service?: components["schemas"]["Service"];
+    };
+    NewRequest: components["schemas"]["RequestCommon"] & {
       /** Format: uuid */
       project_id: string;
       /** Format: uuid */
