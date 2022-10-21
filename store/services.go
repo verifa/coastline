@@ -16,7 +16,7 @@ func (s *Store) QueryServices(ps ...predicate.Service) (*oapi.ServicesResp, erro
 
 	var services = make([]oapi.Service, len(dbServices))
 	for i, dbService := range dbServices {
-		services[i] = dbServiceToAPI(dbService)
+		services[i] = *dbServiceToAPI(dbService)
 	}
 
 	return &oapi.ServicesResp{
@@ -31,12 +31,11 @@ func (s *Store) CreateService(req *oapi.NewService) (*oapi.Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("creating service: %w", err)
 	}
-	service := dbServiceToAPI(dbService)
-	return &service, nil
+	return dbServiceToAPI(dbService), nil
 }
 
-func dbServiceToAPI(dbService *ent.Service) oapi.Service {
-	return oapi.Service{
+func dbServiceToAPI(dbService *ent.Service) *oapi.Service {
+	return &oapi.Service{
 		Id:   dbService.ID,
 		Name: dbService.Name,
 	}

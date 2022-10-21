@@ -40,5 +40,11 @@ func TestStore(t *testing.T) {
 	spew.Dump(request)
 
 	projectResp, err := store.QueryProjects()
+	require.NoError(t, err)
 	fmt.Println(projectResp)
+
+	requestResp, err := store.QueryRequests()
+	require.NoError(t, err)
+	spew.Dump(requestResp)
+
 }
