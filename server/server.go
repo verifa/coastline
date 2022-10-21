@@ -63,28 +63,6 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 		Debug:            true,
 	}))
 
-	// r.Get("/api/v1/swagger.json", func(w http.ResponseWriter, r *http.Request) {
-	// 	swagger, err := oapi.GetSwagger()
-	// 	if err != nil {
-	// 		http.Error(w, "Generating swagger: "+err.Error(), http.StatusInternalServerError)
-	// 	}
-	// 	returnJSON(w, swagger)
-	// })
-
-	// TODO: OpenAPI docs
-	// r.Handle("/swaggerui/*",
-	// 	http.StripPrefix("/swaggerui", http.FileServer(http.FS(swaggerDist))),
-	// )
-	// handler := oapi.HandlerWithOptions(&ServerImpl{store: store}, oapi.ChiServerOptions{
-	// 	Middlewares: []oapi.MiddlewareFunc{
-	// 		// func(hf http.HandlerFunc) http.HandlerFunc {
-	// 		// 	return func(w http.ResponseWriter, r *http.Request) {
-	// 		// 		http.Error(w, "no session", http.StatusUnauthorized)
-	// 		// 	}
-	// 		// },
-	// 	},
-	// })
-
 	serverImpl := ServerImpl{
 		store:  store,
 		engine: engine,
@@ -126,6 +104,10 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 			r.Post("/requests/{id}", wrapper.GetRequestByID)
 			r.Get("/requestsspec", wrapper.GetRequestsSpec)
 		})
+
+		if oapiEnabled {
+			r.Handle("/spec", http.StripPrefix("/api/v1/spec", http.FileServer(oapiSite)))
+		}
 	})
 
 	// Setup frontend, if enabled (toggled via build tags)

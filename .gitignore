@@ -1,5 +1,8 @@
 .DS_Store
 
+# Generated files
+server/oapi
+
 # Exclude binaries
 coastline
 build/
