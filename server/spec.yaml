@@ -298,6 +298,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /userinfo:
+    get:
+      description: |
+        Return information about authenticated user
+      operationId: getUserInfo
+      responses:
+        "200":
+          description: user info response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserInfo"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   #   delete:
   #     description: deletes a single pet based on the ID supplied
   #     operationId: deletePet
@@ -448,6 +466,21 @@ components:
           items:
             $ref: "#/components/schemas/Request"
 
+    UserInfo:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        given_name:
+          type: string
+        family_name:
+          type: string
+        email:
+          type: string
+        picture:
+          type: string
     Error:
       type: object
       required:

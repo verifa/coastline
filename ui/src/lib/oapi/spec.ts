@@ -38,6 +38,10 @@ export interface paths {
     /** Return OpenAPI specification for request types */
     get: operations["getRequestsSpec"];
   };
+  "/userinfo": {
+    /** Return information about authenticated user */
+    get: operations["getUserInfo"];
+  };
 }
 
 export interface components {
@@ -81,6 +85,13 @@ export interface components {
     };
     RequestsResp: {
       requests: components["schemas"]["Request"][];
+    };
+    UserInfo: {
+      name: string;
+      given_name?: string;
+      family_name?: string;
+      email?: string;
+      picture?: string;
     };
     Error: {
       /** Format: int32 */
@@ -311,6 +322,23 @@ export interface operations {
       200: {
         content: {
           "application/json": { [key: string]: unknown };
+        };
+      };
+      /** unexpected error */
+      default: {
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  /** Return information about authenticated user */
+  getUserInfo: {
+    responses: {
+      /** user info response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["UserInfo"];
         };
       };
       /** unexpected error */

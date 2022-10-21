@@ -42,7 +42,7 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 		return nil, fmt.Errorf("creating requests engine: %w", err)
 	}
 
-	provider, err := newAuthProvider(ctx, config.DevMode, config.RedirectURI)
+	authProvider, err := newAuthProvider(ctx, config.DevMode, config.RedirectURI)
 	if err != nil {
 		return nil, fmt.Errorf("creating authentication provider: %w", err)
 	}
@@ -64,6 +64,7 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 	}))
 
 	serverImpl := ServerImpl{
+		auth:   authProvider,
 		store:  store,
 		engine: engine,
 	}
@@ -80,10 +81,10 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 	r.Route("/api/v1", func(r chi.Router) {
 
 		// TODO: replace with OpenAPI generated wrapper by adding to spec
-		r.Mount("/", provider.Routes())
+		r.Mount("/", authProvider.Routes())
 
 		r.Group(func(r chi.Router) {
-			// r.Use(provider.authenticateMiddleware)
+			// r.Use(authProvider.authenticateMiddleware)
 			//
 			// Projects
 			//
@@ -103,6 +104,10 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 			r.Post("/requests", wrapper.CreateRequest)
 			r.Post("/requests/{id}", wrapper.GetRequestByID)
 			r.Get("/requestsspec", wrapper.GetRequestsSpec)
+			//
+			// UserInfo
+			//
+			r.Get("/userinfo", wrapper.GetUserInfo)
 		})
 
 		if oapiEnabled {
@@ -166,6 +171,7 @@ func handleUI() http.Handler {
 var _ oapi.ServerInterface = (*ServerImpl)(nil)
 
 type ServerImpl struct {
+	auth   *authProvider
 	store  *store.Store
 	engine *RequestsEngine
 }

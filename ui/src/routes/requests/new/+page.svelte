@@ -8,6 +8,8 @@
 	import ObjectForm from './objectForm.svelte';
 	import { session } from '$lib/session/store';
 	import { writable } from 'svelte/store';
+	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
 
 	type ProjectsResp = components['schemas']['ProjectsResp'];
 	type ServicesResp = components['schemas']['ServicesResp'];
@@ -45,12 +47,14 @@
 	});
 
 	requestsSubmitStore.subscribe((value) => {
-		console.log(value);
+		if (value.ok) {
+			goto(`${base}/requests`);
+		}
 	});
 
 	function handleSubmit() {
 		$requestStore.type = selectedSpec.type;
-		$requestStore.requested_by = $session.user?.id ? $session.user?.id : 'anonymous';
+		$requestStore.requested_by = $session.user?.name || 'anonymous';
 		requestsSubmitStore.post('/requests', {}, $requestStore);
 	}
 </script>

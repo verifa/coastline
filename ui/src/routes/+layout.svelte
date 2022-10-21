@@ -5,13 +5,13 @@
 
 	import { session } from '$lib/session/store';
 	import { createHttpStore } from '$lib/http/store';
-	import type { UserResponse } from '$lib/session/session';
+	import type { UserInfo } from '$lib/session/session';
 	import { page } from '$app/stores';
 
 	import { base } from '$app/paths';
 	import NavBar from './navBar.svelte';
 
-	const authStore = createHttpStore<UserResponse>();
+	const authStore = createHttpStore<UserInfo>();
 
 	$: isLoginPage = (): boolean => {
 		return $page.url.pathname === `${base}/login`;
@@ -23,12 +23,12 @@
 			return;
 		}
 		if (resp.ok && resp.data) {
-			session.login(resp.data.user);
+			session.login(resp.data);
 		} else if (resp.status === 401) {
 			session.logout();
 		}
 	});
-	authStore.get('/authenticate');
+	authStore.get('/userinfo');
 
 	onMount(() => {
 		// Subscribe to the session store to handle events if user is not authenticated

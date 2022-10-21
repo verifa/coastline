@@ -1,16 +1,9 @@
+import type { components } from "$lib/oapi/spec"
+
+export type UserInfo = components["schemas"]["UserInfo"]
 
 export interface Session {
     initialized: boolean
     authenticated: boolean
-    user?: User
-}
-
-export interface UserResponse {
-    user: User
-}
-
-export interface User {
-    id: string
-    name: string
-    email: string
+    user?: UserInfo
 }

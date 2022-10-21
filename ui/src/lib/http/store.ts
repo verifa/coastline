@@ -19,6 +19,7 @@ export function createHttpStore<Data>() {
     function request(method: string, path: string, params?: Record<string, string>, data?: object) {
         // Clear the store as we are about to make a new request
         store.update((value) => {
+            value.ok = false
             value.fetching = true;
             value.error = undefined;
             value.data = undefined;

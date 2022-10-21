@@ -10,6 +10,7 @@ import (
 	"github.com/coreos/go-oidc"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/server/oapi"
 	"golang.org/x/oauth2"
 )
 
@@ -110,6 +111,19 @@ func (p authProvider) Routes() chi.Router {
 	r.Get("/auth/callback", p.handleAuthCallback)
 
 	return r
+}
+
+func (p authProvider) UserInfo(r *http.Request) (*oapi.UserInfo, error) {
+	session, err := p.sessioner.AuthorizeSession(r)
+	if err != nil {
+		return nil, fmt.Errorf("authorizing request: %w", err)
+	}
+	ui := session.UserInfo
+
+	return &oapi.UserInfo{
+		Name:  ui.Name,
+		Email: &ui.Email,
+	}, nil
 }
 
 func (p authProvider) handleAuthenticate(w http.ResponseWriter, r *http.Request) {
