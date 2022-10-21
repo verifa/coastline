@@ -109,7 +109,7 @@
 	</ol>
 {:else if prop.schema.type == 'object'}
 	<span class="label-text">{prop.name}:</span>
-	<ObjectForm bind:store spec={prop.schema} />
+	<ObjectForm bind:store schemaObj={prop.schema} />
 {:else}
 	<h3>Error: unsupported type {prop.schema.type}</h3>
 {/if}

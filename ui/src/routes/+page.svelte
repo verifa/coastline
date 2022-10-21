@@ -57,12 +57,12 @@
 
 {#if $requestStore.ok && $requestStore.data}
 	{#if $requestStore.data.requests.length === 0}
-		<h2>No services...</h2>
+		<h2>No requests...</h2>
 	{:else}
-		<h2>Services list</h2>
+		<h2>Requests list</h2>
 		<ul>
 			{#each $requestStore.data.requests as request}
-				<li>{request.type} in {request.project.name}</li>
+				<li>{request.type} in {request.project?.name}</li>
 			{/each}
 		</ul>
 	{/if}

@@ -119,7 +119,7 @@
 
 			{#if selectedSpec}
 				<h2>Spec</h2>
-				<ObjectForm bind:store={$requestStore.spec} spec={selectedSpec.spec} />
+				<ObjectForm bind:store={$requestStore.spec} schemaObj={selectedSpec.spec} />
 				<div>
 					<button class="btn btn-primary">Submit</button>
 				</div>

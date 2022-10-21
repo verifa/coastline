@@ -3,15 +3,24 @@
 	import { getInitialPropValue, propFromSchema, type Property } from './spec';
 	import FieldForm from './fieldForm.svelte';
 
-	export let spec: SchemaObject;
 	export let store: { [key: string]: any };
+	export let schemaObj: SchemaObject;
 
-	let properties: Property[] = [];
-	for (const key in spec.properties) {
-		const schemaObj: SchemaObject = spec.properties[key];
-		store[key] = getInitialPropValue(schemaObj);
-		properties.push(propFromSchema(key, spec, schemaObj));
+	function getProperties(obj: SchemaObject): Property[] {
+		let properties: Property[] = [];
+		// Reset the store
+		store = {};
+		for (const key in obj.properties) {
+			const propObj: SchemaObject = obj.properties[key];
+			store[key] = getInitialPropValue(propObj);
+			properties.push(propFromSchema(key, obj, propObj));
+		}
+		return properties;
 	}
+
+	// Reactive declaration of properties in case schemaObj changes,
+	// e.g. if user changes the request type
+	$: properties = getProperties(schemaObj);
 </script>
 
 <div class="ml-4 flex flex-col space-y-4">
