@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -19,6 +20,34 @@ type ServiceCreate struct {
 	config
 	mutation *ServiceMutation
 	hooks    []Hook
+}
+
+// SetCreateTime sets the "create_time" field.
+func (sc *ServiceCreate) SetCreateTime(t time.Time) *ServiceCreate {
+	sc.mutation.SetCreateTime(t)
+	return sc
+}
+
+// SetNillableCreateTime sets the "create_time" field if the given value is not nil.
+func (sc *ServiceCreate) SetNillableCreateTime(t *time.Time) *ServiceCreate {
+	if t != nil {
+		sc.SetCreateTime(*t)
+	}
+	return sc
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (sc *ServiceCreate) SetUpdateTime(t time.Time) *ServiceCreate {
+	sc.mutation.SetUpdateTime(t)
+	return sc
+}
+
+// SetNillableUpdateTime sets the "update_time" field if the given value is not nil.
+func (sc *ServiceCreate) SetNillableUpdateTime(t *time.Time) *ServiceCreate {
+	if t != nil {
+		sc.SetUpdateTime(*t)
+	}
+	return sc
 }
 
 // SetName sets the "name" field.
@@ -133,6 +162,14 @@ func (sc *ServiceCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (sc *ServiceCreate) defaults() {
+	if _, ok := sc.mutation.CreateTime(); !ok {
+		v := service.DefaultCreateTime()
+		sc.mutation.SetCreateTime(v)
+	}
+	if _, ok := sc.mutation.UpdateTime(); !ok {
+		v := service.DefaultUpdateTime()
+		sc.mutation.SetUpdateTime(v)
+	}
 	if _, ok := sc.mutation.ID(); !ok {
 		v := service.DefaultID()
 		sc.mutation.SetID(v)
@@ -141,6 +178,12 @@ func (sc *ServiceCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (sc *ServiceCreate) check() error {
+	if _, ok := sc.mutation.CreateTime(); !ok {
+		return &ValidationError{Name: "create_time", err: errors.New(`ent: missing required field "Service.create_time"`)}
+	}
+	if _, ok := sc.mutation.UpdateTime(); !ok {
+		return &ValidationError{Name: "update_time", err: errors.New(`ent: missing required field "Service.update_time"`)}
+	}
 	if _, ok := sc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Service.name"`)}
 	}
@@ -184,6 +227,22 @@ func (sc *ServiceCreate) createSpec() (*Service, *sqlgraph.CreateSpec) {
 	if id, ok := sc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
+	}
+	if value, ok := sc.mutation.CreateTime(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: service.FieldCreateTime,
+		})
+		_node.CreateTime = value
+	}
+	if value, ok := sc.mutation.UpdateTime(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: service.FieldUpdateTime,
+		})
+		_node.UpdateTime = value
 	}
 	if value, ok := sc.mutation.Name(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

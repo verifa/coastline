@@ -11,9 +11,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/verifa/coastline/ent/migrate"
 
-	"github.com/verifa/coastline/ent/approval"
 	"github.com/verifa/coastline/ent/project"
 	"github.com/verifa/coastline/ent/request"
+	"github.com/verifa/coastline/ent/review"
 	"github.com/verifa/coastline/ent/service"
 
 	"entgo.io/ent/dialect"
@@ -26,12 +26,12 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
-	// Approval is the client for interacting with the Approval builders.
-	Approval *ApprovalClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
 	// Request is the client for interacting with the Request builders.
 	Request *RequestClient
+	// Review is the client for interacting with the Review builders.
+	Review *ReviewClient
 	// Service is the client for interacting with the Service builders.
 	Service *ServiceClient
 }
@@ -47,9 +47,9 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
-	c.Approval = NewApprovalClient(c.config)
 	c.Project = NewProjectClient(c.config)
 	c.Request = NewRequestClient(c.config)
+	c.Review = NewReviewClient(c.config)
 	c.Service = NewServiceClient(c.config)
 }
 
@@ -82,12 +82,12 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:      ctx,
-		config:   cfg,
-		Approval: NewApprovalClient(cfg),
-		Project:  NewProjectClient(cfg),
-		Request:  NewRequestClient(cfg),
-		Service:  NewServiceClient(cfg),
+		ctx:     ctx,
+		config:  cfg,
+		Project: NewProjectClient(cfg),
+		Request: NewRequestClient(cfg),
+		Review:  NewReviewClient(cfg),
+		Service: NewServiceClient(cfg),
 	}, nil
 }
 
@@ -105,19 +105,19 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:      ctx,
-		config:   cfg,
-		Approval: NewApprovalClient(cfg),
-		Project:  NewProjectClient(cfg),
-		Request:  NewRequestClient(cfg),
-		Service:  NewServiceClient(cfg),
+		ctx:     ctx,
+		config:  cfg,
+		Project: NewProjectClient(cfg),
+		Request: NewRequestClient(cfg),
+		Review:  NewReviewClient(cfg),
+		Service: NewServiceClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Approval.
+//		Project.
 //		Query().
 //		Count(ctx)
 //
@@ -140,116 +140,10 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.Approval.Use(hooks...)
 	c.Project.Use(hooks...)
 	c.Request.Use(hooks...)
+	c.Review.Use(hooks...)
 	c.Service.Use(hooks...)
-}
-
-// ApprovalClient is a client for the Approval schema.
-type ApprovalClient struct {
-	config
-}
-
-// NewApprovalClient returns a client for the Approval from the given config.
-func NewApprovalClient(c config) *ApprovalClient {
-	return &ApprovalClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `approval.Hooks(f(g(h())))`.
-func (c *ApprovalClient) Use(hooks ...Hook) {
-	c.hooks.Approval = append(c.hooks.Approval, hooks...)
-}
-
-// Create returns a builder for creating a Approval entity.
-func (c *ApprovalClient) Create() *ApprovalCreate {
-	mutation := newApprovalMutation(c.config, OpCreate)
-	return &ApprovalCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Approval entities.
-func (c *ApprovalClient) CreateBulk(builders ...*ApprovalCreate) *ApprovalCreateBulk {
-	return &ApprovalCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Approval.
-func (c *ApprovalClient) Update() *ApprovalUpdate {
-	mutation := newApprovalMutation(c.config, OpUpdate)
-	return &ApprovalUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *ApprovalClient) UpdateOne(a *Approval) *ApprovalUpdateOne {
-	mutation := newApprovalMutation(c.config, OpUpdateOne, withApproval(a))
-	return &ApprovalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *ApprovalClient) UpdateOneID(id uuid.UUID) *ApprovalUpdateOne {
-	mutation := newApprovalMutation(c.config, OpUpdateOne, withApprovalID(id))
-	return &ApprovalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Approval.
-func (c *ApprovalClient) Delete() *ApprovalDelete {
-	mutation := newApprovalMutation(c.config, OpDelete)
-	return &ApprovalDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *ApprovalClient) DeleteOne(a *Approval) *ApprovalDeleteOne {
-	return c.DeleteOneID(a.ID)
-}
-
-// DeleteOne returns a builder for deleting the given entity by its id.
-func (c *ApprovalClient) DeleteOneID(id uuid.UUID) *ApprovalDeleteOne {
-	builder := c.Delete().Where(approval.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &ApprovalDeleteOne{builder}
-}
-
-// Query returns a query builder for Approval.
-func (c *ApprovalClient) Query() *ApprovalQuery {
-	return &ApprovalQuery{
-		config: c.config,
-	}
-}
-
-// Get returns a Approval entity by its id.
-func (c *ApprovalClient) Get(ctx context.Context, id uuid.UUID) (*Approval, error) {
-	return c.Query().Where(approval.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *ApprovalClient) GetX(ctx context.Context, id uuid.UUID) *Approval {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryRequest queries the Request edge of a Approval.
-func (c *ApprovalClient) QueryRequest(a *Approval) *RequestQuery {
-	query := &RequestQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := a.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(approval.Table, approval.FieldID, id),
-			sqlgraph.To(request.Table, request.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, approval.RequestTable, approval.RequestPrimaryKey...),
-		)
-		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *ApprovalClient) Hooks() []Hook {
-	return c.hooks.Approval
 }
 
 // ProjectClient is a client for the Project schema.
@@ -475,15 +369,15 @@ func (c *RequestClient) QueryService(r *Request) *ServiceQuery {
 	return query
 }
 
-// QueryApprovals queries the Approvals edge of a Request.
-func (c *RequestClient) QueryApprovals(r *Request) *ApprovalQuery {
-	query := &ApprovalQuery{config: c.config}
+// QueryReviews queries the Reviews edge of a Request.
+func (c *RequestClient) QueryReviews(r *Request) *ReviewQuery {
+	query := &ReviewQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := r.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(request.Table, request.FieldID, id),
-			sqlgraph.To(approval.Table, approval.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, request.ApprovalsTable, request.ApprovalsPrimaryKey...),
+			sqlgraph.To(review.Table, review.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, request.ReviewsTable, request.ReviewsColumn),
 		)
 		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
 		return fromV, nil
@@ -494,6 +388,112 @@ func (c *RequestClient) QueryApprovals(r *Request) *ApprovalQuery {
 // Hooks returns the client hooks.
 func (c *RequestClient) Hooks() []Hook {
 	return c.hooks.Request
+}
+
+// ReviewClient is a client for the Review schema.
+type ReviewClient struct {
+	config
+}
+
+// NewReviewClient returns a client for the Review from the given config.
+func NewReviewClient(c config) *ReviewClient {
+	return &ReviewClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `review.Hooks(f(g(h())))`.
+func (c *ReviewClient) Use(hooks ...Hook) {
+	c.hooks.Review = append(c.hooks.Review, hooks...)
+}
+
+// Create returns a builder for creating a Review entity.
+func (c *ReviewClient) Create() *ReviewCreate {
+	mutation := newReviewMutation(c.config, OpCreate)
+	return &ReviewCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Review entities.
+func (c *ReviewClient) CreateBulk(builders ...*ReviewCreate) *ReviewCreateBulk {
+	return &ReviewCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Review.
+func (c *ReviewClient) Update() *ReviewUpdate {
+	mutation := newReviewMutation(c.config, OpUpdate)
+	return &ReviewUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ReviewClient) UpdateOne(r *Review) *ReviewUpdateOne {
+	mutation := newReviewMutation(c.config, OpUpdateOne, withReview(r))
+	return &ReviewUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ReviewClient) UpdateOneID(id uuid.UUID) *ReviewUpdateOne {
+	mutation := newReviewMutation(c.config, OpUpdateOne, withReviewID(id))
+	return &ReviewUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Review.
+func (c *ReviewClient) Delete() *ReviewDelete {
+	mutation := newReviewMutation(c.config, OpDelete)
+	return &ReviewDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ReviewClient) DeleteOne(r *Review) *ReviewDeleteOne {
+	return c.DeleteOneID(r.ID)
+}
+
+// DeleteOne returns a builder for deleting the given entity by its id.
+func (c *ReviewClient) DeleteOneID(id uuid.UUID) *ReviewDeleteOne {
+	builder := c.Delete().Where(review.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ReviewDeleteOne{builder}
+}
+
+// Query returns a query builder for Review.
+func (c *ReviewClient) Query() *ReviewQuery {
+	return &ReviewQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Review entity by its id.
+func (c *ReviewClient) Get(ctx context.Context, id uuid.UUID) (*Review, error) {
+	return c.Query().Where(review.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ReviewClient) GetX(ctx context.Context, id uuid.UUID) *Review {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRequest queries the Request edge of a Review.
+func (c *ReviewClient) QueryRequest(r *Review) *RequestQuery {
+	query := &RequestQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(review.Table, review.FieldID, id),
+			sqlgraph.To(request.Table, request.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, review.RequestTable, review.RequestColumn),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ReviewClient) Hooks() []Hook {
+	return c.hooks.Review
 }
 
 // ServiceClient is a client for the Service schema.

@@ -3,10 +3,12 @@
 package ent
 
 import (
+	"time"
+
 	"github.com/google/uuid"
-	"github.com/verifa/coastline/ent/approval"
 	"github.com/verifa/coastline/ent/project"
 	"github.com/verifa/coastline/ent/request"
+	"github.com/verifa/coastline/ent/review"
 	"github.com/verifa/coastline/ent/schema"
 	"github.com/verifa/coastline/ent/service"
 )
@@ -15,22 +17,21 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
-	approvalFields := schema.Approval{}.Fields()
-	_ = approvalFields
-	// approvalDescIsAutomated is the schema descriptor for is_automated field.
-	approvalDescIsAutomated := approvalFields[1].Descriptor()
-	// approval.DefaultIsAutomated holds the default value on creation for the is_automated field.
-	approval.DefaultIsAutomated = approvalDescIsAutomated.Default.(bool)
-	// approvalDescApprover is the schema descriptor for approver field.
-	approvalDescApprover := approvalFields[2].Descriptor()
-	// approval.ApproverValidator is a validator for the "approver" field. It is called by the builders before save.
-	approval.ApproverValidator = approvalDescApprover.Validators[0].(func(string) error)
-	// approvalDescID is the schema descriptor for id field.
-	approvalDescID := approvalFields[0].Descriptor()
-	// approval.DefaultID holds the default value on creation for the id field.
-	approval.DefaultID = approvalDescID.Default.(func() uuid.UUID)
+	projectMixin := schema.Project{}.Mixin()
+	projectMixinFields0 := projectMixin[0].Fields()
+	_ = projectMixinFields0
 	projectFields := schema.Project{}.Fields()
 	_ = projectFields
+	// projectDescCreateTime is the schema descriptor for create_time field.
+	projectDescCreateTime := projectMixinFields0[0].Descriptor()
+	// project.DefaultCreateTime holds the default value on creation for the create_time field.
+	project.DefaultCreateTime = projectDescCreateTime.Default.(func() time.Time)
+	// projectDescUpdateTime is the schema descriptor for update_time field.
+	projectDescUpdateTime := projectMixinFields0[1].Descriptor()
+	// project.DefaultUpdateTime holds the default value on creation for the update_time field.
+	project.DefaultUpdateTime = projectDescUpdateTime.Default.(func() time.Time)
+	// project.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	project.UpdateDefaultUpdateTime = projectDescUpdateTime.UpdateDefault.(func() time.Time)
 	// projectDescName is the schema descriptor for name field.
 	projectDescName := projectFields[1].Descriptor()
 	// project.NameValidator is a validator for the "name" field. It is called by the builders before save.
@@ -39,8 +40,21 @@ func init() {
 	projectDescID := projectFields[0].Descriptor()
 	// project.DefaultID holds the default value on creation for the id field.
 	project.DefaultID = projectDescID.Default.(func() uuid.UUID)
+	requestMixin := schema.Request{}.Mixin()
+	requestMixinFields0 := requestMixin[0].Fields()
+	_ = requestMixinFields0
 	requestFields := schema.Request{}.Fields()
 	_ = requestFields
+	// requestDescCreateTime is the schema descriptor for create_time field.
+	requestDescCreateTime := requestMixinFields0[0].Descriptor()
+	// request.DefaultCreateTime holds the default value on creation for the create_time field.
+	request.DefaultCreateTime = requestDescCreateTime.Default.(func() time.Time)
+	// requestDescUpdateTime is the schema descriptor for update_time field.
+	requestDescUpdateTime := requestMixinFields0[1].Descriptor()
+	// request.DefaultUpdateTime holds the default value on creation for the update_time field.
+	request.DefaultUpdateTime = requestDescUpdateTime.Default.(func() time.Time)
+	// request.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	request.UpdateDefaultUpdateTime = requestDescUpdateTime.UpdateDefault.(func() time.Time)
 	// requestDescType is the schema descriptor for type field.
 	requestDescType := requestFields[1].Descriptor()
 	// request.TypeValidator is a validator for the "type" field. It is called by the builders before save.
@@ -53,8 +67,40 @@ func init() {
 	requestDescID := requestFields[0].Descriptor()
 	// request.DefaultID holds the default value on creation for the id field.
 	request.DefaultID = requestDescID.Default.(func() uuid.UUID)
+	reviewMixin := schema.Review{}.Mixin()
+	reviewMixinFields0 := reviewMixin[0].Fields()
+	_ = reviewMixinFields0
+	reviewFields := schema.Review{}.Fields()
+	_ = reviewFields
+	// reviewDescCreateTime is the schema descriptor for create_time field.
+	reviewDescCreateTime := reviewMixinFields0[0].Descriptor()
+	// review.DefaultCreateTime holds the default value on creation for the create_time field.
+	review.DefaultCreateTime = reviewDescCreateTime.Default.(func() time.Time)
+	// reviewDescUpdateTime is the schema descriptor for update_time field.
+	reviewDescUpdateTime := reviewMixinFields0[1].Descriptor()
+	// review.DefaultUpdateTime holds the default value on creation for the update_time field.
+	review.DefaultUpdateTime = reviewDescUpdateTime.Default.(func() time.Time)
+	// review.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	review.UpdateDefaultUpdateTime = reviewDescUpdateTime.UpdateDefault.(func() time.Time)
+	// reviewDescID is the schema descriptor for id field.
+	reviewDescID := reviewFields[0].Descriptor()
+	// review.DefaultID holds the default value on creation for the id field.
+	review.DefaultID = reviewDescID.Default.(func() uuid.UUID)
+	serviceMixin := schema.Service{}.Mixin()
+	serviceMixinFields0 := serviceMixin[0].Fields()
+	_ = serviceMixinFields0
 	serviceFields := schema.Service{}.Fields()
 	_ = serviceFields
+	// serviceDescCreateTime is the schema descriptor for create_time field.
+	serviceDescCreateTime := serviceMixinFields0[0].Descriptor()
+	// service.DefaultCreateTime holds the default value on creation for the create_time field.
+	service.DefaultCreateTime = serviceDescCreateTime.Default.(func() time.Time)
+	// serviceDescUpdateTime is the schema descriptor for update_time field.
+	serviceDescUpdateTime := serviceMixinFields0[1].Descriptor()
+	// service.DefaultUpdateTime holds the default value on creation for the update_time field.
+	service.DefaultUpdateTime = serviceDescUpdateTime.Default.(func() time.Time)
+	// service.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	service.UpdateDefaultUpdateTime = serviceDescUpdateTime.UpdateDefault.(func() time.Time)
 	// serviceDescName is the schema descriptor for name field.
 	serviceDescName := serviceFields[1].Descriptor()
 	// service.NameValidator is a validator for the "name" field. It is called by the builders before save.

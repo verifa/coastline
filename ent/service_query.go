@@ -291,12 +291,12 @@ func (sq *ServiceQuery) WithRequests(opts ...func(*RequestQuery)) *ServiceQuery 
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Service.Query().
-//		GroupBy(service.FieldName).
+//		GroupBy(service.FieldCreateTime).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 //
@@ -320,11 +320,11 @@ func (sq *ServiceQuery) GroupBy(field string, fields ...string) *ServiceGroupBy 
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //	}
 //
 //	client.Service.Query().
-//		Select(service.FieldName).
+//		Select(service.FieldCreateTime).
 //		Scan(ctx, &v)
 //
 func (sq *ServiceQuery) Select(fields ...string) *ServiceSelect {

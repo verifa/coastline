@@ -12,12 +12,12 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
-	// Approval is the client for interacting with the Approval builders.
-	Approval *ApprovalClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
 	// Request is the client for interacting with the Request builders.
 	Request *RequestClient
+	// Review is the client for interacting with the Review builders.
+	Review *ReviewClient
 	// Service is the client for interacting with the Service builders.
 	Service *ServiceClient
 
@@ -151,9 +151,9 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
-	tx.Approval = NewApprovalClient(tx.config)
 	tx.Project = NewProjectClient(tx.config)
 	tx.Request = NewRequestClient(tx.config)
+	tx.Review = NewReviewClient(tx.config)
 	tx.Service = NewServiceClient(tx.config)
 }
 
@@ -164,7 +164,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Approval.QueryXXX(), the query will be executed
+// applies a query, for example: Project.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

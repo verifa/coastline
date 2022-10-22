@@ -6,13 +6,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"github.com/verifa/coastline/ent/approval"
 	"github.com/verifa/coastline/ent/project"
 	"github.com/verifa/coastline/ent/request"
+	"github.com/verifa/coastline/ent/review"
 	"github.com/verifa/coastline/ent/schema"
 	"github.com/verifa/coastline/ent/service"
 )
@@ -24,6 +25,34 @@ type RequestCreate struct {
 	hooks    []Hook
 }
 
+// SetCreateTime sets the "create_time" field.
+func (rc *RequestCreate) SetCreateTime(t time.Time) *RequestCreate {
+	rc.mutation.SetCreateTime(t)
+	return rc
+}
+
+// SetNillableCreateTime sets the "create_time" field if the given value is not nil.
+func (rc *RequestCreate) SetNillableCreateTime(t *time.Time) *RequestCreate {
+	if t != nil {
+		rc.SetCreateTime(*t)
+	}
+	return rc
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (rc *RequestCreate) SetUpdateTime(t time.Time) *RequestCreate {
+	rc.mutation.SetUpdateTime(t)
+	return rc
+}
+
+// SetNillableUpdateTime sets the "update_time" field if the given value is not nil.
+func (rc *RequestCreate) SetNillableUpdateTime(t *time.Time) *RequestCreate {
+	if t != nil {
+		rc.SetUpdateTime(*t)
+	}
+	return rc
+}
+
 // SetType sets the "type" field.
 func (rc *RequestCreate) SetType(s string) *RequestCreate {
 	rc.mutation.SetType(s)
@@ -33,6 +62,20 @@ func (rc *RequestCreate) SetType(s string) *RequestCreate {
 // SetRequestedBy sets the "requested_by" field.
 func (rc *RequestCreate) SetRequestedBy(s string) *RequestCreate {
 	rc.mutation.SetRequestedBy(s)
+	return rc
+}
+
+// SetStatus sets the "status" field.
+func (rc *RequestCreate) SetStatus(r request.Status) *RequestCreate {
+	rc.mutation.SetStatus(r)
+	return rc
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (rc *RequestCreate) SetNillableStatus(r *request.Status) *RequestCreate {
+	if r != nil {
+		rc.SetStatus(*r)
+	}
 	return rc
 }
 
@@ -78,19 +121,19 @@ func (rc *RequestCreate) SetService(s *Service) *RequestCreate {
 	return rc.SetServiceID(s.ID)
 }
 
-// AddApprovalIDs adds the "Approvals" edge to the Approval entity by IDs.
-func (rc *RequestCreate) AddApprovalIDs(ids ...uuid.UUID) *RequestCreate {
-	rc.mutation.AddApprovalIDs(ids...)
+// AddReviewIDs adds the "Reviews" edge to the Review entity by IDs.
+func (rc *RequestCreate) AddReviewIDs(ids ...uuid.UUID) *RequestCreate {
+	rc.mutation.AddReviewIDs(ids...)
 	return rc
 }
 
-// AddApprovals adds the "Approvals" edges to the Approval entity.
-func (rc *RequestCreate) AddApprovals(a ...*Approval) *RequestCreate {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+// AddReviews adds the "Reviews" edges to the Review entity.
+func (rc *RequestCreate) AddReviews(r ...*Review) *RequestCreate {
+	ids := make([]uuid.UUID, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
-	return rc.AddApprovalIDs(ids...)
+	return rc.AddReviewIDs(ids...)
 }
 
 // Mutation returns the RequestMutation object of the builder.
@@ -170,6 +213,18 @@ func (rc *RequestCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (rc *RequestCreate) defaults() {
+	if _, ok := rc.mutation.CreateTime(); !ok {
+		v := request.DefaultCreateTime()
+		rc.mutation.SetCreateTime(v)
+	}
+	if _, ok := rc.mutation.UpdateTime(); !ok {
+		v := request.DefaultUpdateTime()
+		rc.mutation.SetUpdateTime(v)
+	}
+	if _, ok := rc.mutation.Status(); !ok {
+		v := request.DefaultStatus
+		rc.mutation.SetStatus(v)
+	}
 	if _, ok := rc.mutation.ID(); !ok {
 		v := request.DefaultID()
 		rc.mutation.SetID(v)
@@ -178,6 +233,12 @@ func (rc *RequestCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (rc *RequestCreate) check() error {
+	if _, ok := rc.mutation.CreateTime(); !ok {
+		return &ValidationError{Name: "create_time", err: errors.New(`ent: missing required field "Request.create_time"`)}
+	}
+	if _, ok := rc.mutation.UpdateTime(); !ok {
+		return &ValidationError{Name: "update_time", err: errors.New(`ent: missing required field "Request.update_time"`)}
+	}
 	if _, ok := rc.mutation.GetType(); !ok {
 		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Request.type"`)}
 	}
@@ -192,6 +253,14 @@ func (rc *RequestCreate) check() error {
 	if v, ok := rc.mutation.RequestedBy(); ok {
 		if err := request.RequestedByValidator(v); err != nil {
 			return &ValidationError{Name: "requested_by", err: fmt.Errorf(`ent: validator failed for field "Request.requested_by": %w`, err)}
+		}
+	}
+	if _, ok := rc.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Request.status"`)}
+	}
+	if v, ok := rc.mutation.Status(); ok {
+		if err := request.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Request.status": %w`, err)}
 		}
 	}
 	if _, ok := rc.mutation.Spec(); !ok {
@@ -239,6 +308,22 @@ func (rc *RequestCreate) createSpec() (*Request, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
+	if value, ok := rc.mutation.CreateTime(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: request.FieldCreateTime,
+		})
+		_node.CreateTime = value
+	}
+	if value, ok := rc.mutation.UpdateTime(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: request.FieldUpdateTime,
+		})
+		_node.UpdateTime = value
+	}
 	if value, ok := rc.mutation.GetType(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -254,6 +339,14 @@ func (rc *RequestCreate) createSpec() (*Request, *sqlgraph.CreateSpec) {
 			Column: request.FieldRequestedBy,
 		})
 		_node.RequestedBy = value
+	}
+	if value, ok := rc.mutation.Status(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: request.FieldStatus,
+		})
+		_node.Status = value
 	}
 	if value, ok := rc.mutation.Spec(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -303,17 +396,17 @@ func (rc *RequestCreate) createSpec() (*Request, *sqlgraph.CreateSpec) {
 		_node.request_service = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := rc.mutation.ApprovalsIDs(); len(nodes) > 0 {
+	if nodes := rc.mutation.ReviewsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   request.ApprovalsTable,
-			Columns: request.ApprovalsPrimaryKey,
+			Table:   request.ReviewsTable,
+			Columns: []string{request.ReviewsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: approval.FieldID,
+					Column: review.FieldID,
 				},
 			},
 		}

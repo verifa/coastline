@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/verifa/coastline/ent"
+	"github.com/verifa/coastline/ent/hook"
 
 	_ "github.com/xiaoqidun/entps"
 )
@@ -23,6 +24,10 @@ func New(ctx context.Context) (*Store, error) {
 		client: client,
 		ctx:    ctx,
 	}
+
+	// Setup hooks
+	s.RegisterHooks()
+
 	if err := s.init(); err != nil {
 		return nil, fmt.Errorf("initializing database: %w", err)
 	}
@@ -41,6 +46,22 @@ func (s *Store) Client() *ent.Client {
 
 func (s *Store) Close() error {
 	return s.client.Close()
+}
+
+func (s *Store) RegisterHooks() {
+	s.client.Review.Use(func(next ent.Mutator) ent.Mutator {
+		return hook.ReviewFunc(func(ctx context.Context, m *ent.ReviewMutation) (ent.Value, error) {
+			// Execute mutation first
+			value, err := next.Mutate(ctx, m)
+			if err != nil {
+				return nil, err
+			}
+			if err := s.HandleNewReview(m); err != nil {
+				return nil, fmt.Errorf("handling new review hook: %w", err)
+			}
+			return value, nil
+		})
+	})
 }
 
 // init populates the database with some initial data

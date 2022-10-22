@@ -10,9 +10,9 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/verifa/coastline/ent/approval"
 	"github.com/verifa/coastline/ent/project"
 	"github.com/verifa/coastline/ent/request"
+	"github.com/verifa/coastline/ent/review"
 	"github.com/verifa/coastline/ent/service"
 )
 
@@ -34,10 +34,10 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		approval.Table: approval.ValidColumn,
-		project.Table:  project.ValidColumn,
-		request.Table:  request.ValidColumn,
-		service.Table:  service.ValidColumn,
+		project.Table: project.ValidColumn,
+		request.Table: request.ValidColumn,
+		review.Table:  review.ValidColumn,
+		service.Table: service.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

@@ -34,6 +34,10 @@ export interface paths {
     /** Returns a request by ID */
     get: operations["getRequestByID"];
   };
+  "/requests/{id}/review": {
+    /** Review a request */
+    post: operations["reviewRequest"];
+  };
   "/requestsspec": {
     /** Return OpenAPI specification for request types */
     get: operations["getRequestsSpec"];
@@ -69,13 +73,16 @@ export interface components {
     RequestCommon: {
       type: string;
       requested_by: string;
+      /** @enum {string} */
+      status: "pending_approval" | "rejected" | "approved";
       spec: { [key: string]: unknown };
     };
     Request: components["schemas"]["RequestCommon"] & {
       /** Format: uuid */
       id: string;
-      project?: components["schemas"]["Project"];
-      service?: components["schemas"]["Service"];
+      project: components["schemas"]["Project"];
+      service: components["schemas"]["Service"];
+      reviews: components["schemas"]["Review"][];
     };
     NewRequest: components["schemas"]["RequestCommon"] & {
       /** Format: uuid */
@@ -85,6 +92,16 @@ export interface components {
     };
     RequestsResp: {
       requests: components["schemas"]["Request"][];
+    };
+    Review: components["schemas"]["NewReview"] & {
+      /** Format: uuid */
+      id: string;
+    };
+    NewReview: {
+      /** @enum {string} */
+      status: "reject" | "approve";
+      /** @enum {string} */
+      type: "user" | "auto";
     };
     UserInfo: {
       name: string;
@@ -311,6 +328,35 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["Error"];
         };
+      };
+    };
+  };
+  /** Review a request */
+  reviewRequest: {
+    parameters: {
+      path: {
+        /** ID of request to review */
+        id: string;
+      };
+    };
+    responses: {
+      /** review response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["Review"];
+        };
+      };
+      /** unexpected error */
+      default: {
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+    /** Review to add to request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["NewRequest"];
       };
     };
   };

@@ -8,28 +8,11 @@ import (
 )
 
 var (
-	// ApprovalsColumns holds the columns for the "approvals" table.
-	ApprovalsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
-		{Name: "is_automated", Type: field.TypeBool, Default: false},
-		{Name: "approver", Type: field.TypeString},
-	}
-	// ApprovalsTable holds the schema information for the "approvals" table.
-	ApprovalsTable = &schema.Table{
-		Name:       "approvals",
-		Columns:    ApprovalsColumns,
-		PrimaryKey: []*schema.Column{ApprovalsColumns[0]},
-		Indexes: []*schema.Index{
-			{
-				Name:    "approval_id",
-				Unique:  true,
-				Columns: []*schema.Column{ApprovalsColumns[0]},
-			},
-		},
-	}
 	// ProjectsColumns holds the columns for the "projects" table.
 	ProjectsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
 	}
 	// ProjectsTable holds the schema information for the "projects" table.
@@ -48,8 +31,11 @@ var (
 	// RequestsColumns holds the columns for the "requests" table.
 	RequestsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
 		{Name: "type", Type: field.TypeString},
 		{Name: "requested_by", Type: field.TypeString},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending_approval", "rejected", "approved"}, Default: "pending_approval"},
 		{Name: "spec", Type: field.TypeJSON},
 		{Name: "request_project", Type: field.TypeUUID},
 		{Name: "request_service", Type: field.TypeUUID},
@@ -62,13 +48,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "requests_projects_Project",
-				Columns:    []*schema.Column{RequestsColumns[4]},
+				Columns:    []*schema.Column{RequestsColumns[7]},
 				RefColumns: []*schema.Column{ProjectsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "requests_services_Service",
-				Columns:    []*schema.Column{RequestsColumns[5]},
+				Columns:    []*schema.Column{RequestsColumns[8]},
 				RefColumns: []*schema.Column{ServicesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -81,9 +67,41 @@ var (
 			},
 		},
 	}
+	// ReviewsColumns holds the columns for the "reviews" table.
+	ReviewsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"reject", "approve"}},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"user", "auto"}, Default: "user"},
+		{Name: "review_request", Type: field.TypeUUID},
+	}
+	// ReviewsTable holds the schema information for the "reviews" table.
+	ReviewsTable = &schema.Table{
+		Name:       "reviews",
+		Columns:    ReviewsColumns,
+		PrimaryKey: []*schema.Column{ReviewsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "reviews_requests_Request",
+				Columns:    []*schema.Column{ReviewsColumns[5]},
+				RefColumns: []*schema.Column{RequestsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "review_id",
+				Unique:  true,
+				Columns: []*schema.Column{ReviewsColumns[0]},
+			},
+		},
+	}
 	// ServicesColumns holds the columns for the "services" table.
 	ServicesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
+		{Name: "create_time", Type: field.TypeTime},
+		{Name: "update_time", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Unique: true},
 	}
 	// ServicesTable holds the schema information for the "services" table.
@@ -99,44 +117,17 @@ var (
 			},
 		},
 	}
-	// ApprovalRequestColumns holds the columns for the "approval_Request" table.
-	ApprovalRequestColumns = []*schema.Column{
-		{Name: "approval_id", Type: field.TypeUUID},
-		{Name: "request_id", Type: field.TypeUUID},
-	}
-	// ApprovalRequestTable holds the schema information for the "approval_Request" table.
-	ApprovalRequestTable = &schema.Table{
-		Name:       "approval_Request",
-		Columns:    ApprovalRequestColumns,
-		PrimaryKey: []*schema.Column{ApprovalRequestColumns[0], ApprovalRequestColumns[1]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "approval_Request_approval_id",
-				Columns:    []*schema.Column{ApprovalRequestColumns[0]},
-				RefColumns: []*schema.Column{ApprovalsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-			{
-				Symbol:     "approval_Request_request_id",
-				Columns:    []*schema.Column{ApprovalRequestColumns[1]},
-				RefColumns: []*schema.Column{RequestsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
-		ApprovalsTable,
 		ProjectsTable,
 		RequestsTable,
+		ReviewsTable,
 		ServicesTable,
-		ApprovalRequestTable,
 	}
 )
 
 func init() {
 	RequestsTable.ForeignKeys[0].RefTable = ProjectsTable
 	RequestsTable.ForeignKeys[1].RefTable = ServicesTable
-	ApprovalRequestTable.ForeignKeys[0].RefTable = ApprovalsTable
-	ApprovalRequestTable.ForeignKeys[1].RefTable = RequestsTable
+	ReviewsTable.ForeignKeys[0].RefTable = RequestsTable
 }

@@ -6,15 +6,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"github.com/verifa/coastline/ent/approval"
 	"github.com/verifa/coastline/ent/predicate"
 	"github.com/verifa/coastline/ent/project"
 	"github.com/verifa/coastline/ent/request"
+	"github.com/verifa/coastline/ent/review"
 	"github.com/verifa/coastline/ent/schema"
 	"github.com/verifa/coastline/ent/service"
 )
@@ -32,6 +33,12 @@ func (ru *RequestUpdate) Where(ps ...predicate.Request) *RequestUpdate {
 	return ru
 }
 
+// SetUpdateTime sets the "update_time" field.
+func (ru *RequestUpdate) SetUpdateTime(t time.Time) *RequestUpdate {
+	ru.mutation.SetUpdateTime(t)
+	return ru
+}
+
 // SetType sets the "type" field.
 func (ru *RequestUpdate) SetType(s string) *RequestUpdate {
 	ru.mutation.SetType(s)
@@ -41,6 +48,20 @@ func (ru *RequestUpdate) SetType(s string) *RequestUpdate {
 // SetRequestedBy sets the "requested_by" field.
 func (ru *RequestUpdate) SetRequestedBy(s string) *RequestUpdate {
 	ru.mutation.SetRequestedBy(s)
+	return ru
+}
+
+// SetStatus sets the "status" field.
+func (ru *RequestUpdate) SetStatus(r request.Status) *RequestUpdate {
+	ru.mutation.SetStatus(r)
+	return ru
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (ru *RequestUpdate) SetNillableStatus(r *request.Status) *RequestUpdate {
+	if r != nil {
+		ru.SetStatus(*r)
+	}
 	return ru
 }
 
@@ -72,19 +93,19 @@ func (ru *RequestUpdate) SetService(s *Service) *RequestUpdate {
 	return ru.SetServiceID(s.ID)
 }
 
-// AddApprovalIDs adds the "Approvals" edge to the Approval entity by IDs.
-func (ru *RequestUpdate) AddApprovalIDs(ids ...uuid.UUID) *RequestUpdate {
-	ru.mutation.AddApprovalIDs(ids...)
+// AddReviewIDs adds the "Reviews" edge to the Review entity by IDs.
+func (ru *RequestUpdate) AddReviewIDs(ids ...uuid.UUID) *RequestUpdate {
+	ru.mutation.AddReviewIDs(ids...)
 	return ru
 }
 
-// AddApprovals adds the "Approvals" edges to the Approval entity.
-func (ru *RequestUpdate) AddApprovals(a ...*Approval) *RequestUpdate {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+// AddReviews adds the "Reviews" edges to the Review entity.
+func (ru *RequestUpdate) AddReviews(r ...*Review) *RequestUpdate {
+	ids := make([]uuid.UUID, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
-	return ru.AddApprovalIDs(ids...)
+	return ru.AddReviewIDs(ids...)
 }
 
 // Mutation returns the RequestMutation object of the builder.
@@ -104,25 +125,25 @@ func (ru *RequestUpdate) ClearService() *RequestUpdate {
 	return ru
 }
 
-// ClearApprovals clears all "Approvals" edges to the Approval entity.
-func (ru *RequestUpdate) ClearApprovals() *RequestUpdate {
-	ru.mutation.ClearApprovals()
+// ClearReviews clears all "Reviews" edges to the Review entity.
+func (ru *RequestUpdate) ClearReviews() *RequestUpdate {
+	ru.mutation.ClearReviews()
 	return ru
 }
 
-// RemoveApprovalIDs removes the "Approvals" edge to Approval entities by IDs.
-func (ru *RequestUpdate) RemoveApprovalIDs(ids ...uuid.UUID) *RequestUpdate {
-	ru.mutation.RemoveApprovalIDs(ids...)
+// RemoveReviewIDs removes the "Reviews" edge to Review entities by IDs.
+func (ru *RequestUpdate) RemoveReviewIDs(ids ...uuid.UUID) *RequestUpdate {
+	ru.mutation.RemoveReviewIDs(ids...)
 	return ru
 }
 
-// RemoveApprovals removes "Approvals" edges to Approval entities.
-func (ru *RequestUpdate) RemoveApprovals(a ...*Approval) *RequestUpdate {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+// RemoveReviews removes "Reviews" edges to Review entities.
+func (ru *RequestUpdate) RemoveReviews(r ...*Review) *RequestUpdate {
+	ids := make([]uuid.UUID, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
-	return ru.RemoveApprovalIDs(ids...)
+	return ru.RemoveReviewIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -131,6 +152,7 @@ func (ru *RequestUpdate) Save(ctx context.Context) (int, error) {
 		err      error
 		affected int
 	)
+	ru.defaults()
 	if len(ru.hooks) == 0 {
 		if err = ru.check(); err != nil {
 			return 0, err
@@ -185,6 +207,14 @@ func (ru *RequestUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (ru *RequestUpdate) defaults() {
+	if _, ok := ru.mutation.UpdateTime(); !ok {
+		v := request.UpdateDefaultUpdateTime()
+		ru.mutation.SetUpdateTime(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (ru *RequestUpdate) check() error {
 	if v, ok := ru.mutation.GetType(); ok {
@@ -195,6 +225,11 @@ func (ru *RequestUpdate) check() error {
 	if v, ok := ru.mutation.RequestedBy(); ok {
 		if err := request.RequestedByValidator(v); err != nil {
 			return &ValidationError{Name: "requested_by", err: fmt.Errorf(`ent: validator failed for field "Request.requested_by": %w`, err)}
+		}
+	}
+	if v, ok := ru.mutation.Status(); ok {
+		if err := request.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Request.status": %w`, err)}
 		}
 	}
 	if _, ok := ru.mutation.ProjectID(); ru.mutation.ProjectCleared() && !ok {
@@ -224,6 +259,13 @@ func (ru *RequestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := ru.mutation.UpdateTime(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: request.FieldUpdateTime,
+		})
+	}
 	if value, ok := ru.mutation.GetType(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -236,6 +278,13 @@ func (ru *RequestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Type:   field.TypeString,
 			Value:  value,
 			Column: request.FieldRequestedBy,
+		})
+	}
+	if value, ok := ru.mutation.Status(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: request.FieldStatus,
 		})
 	}
 	if value, ok := ru.mutation.Spec(); ok {
@@ -315,33 +364,33 @@ func (ru *RequestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if ru.mutation.ApprovalsCleared() {
+	if ru.mutation.ReviewsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   request.ApprovalsTable,
-			Columns: request.ApprovalsPrimaryKey,
+			Table:   request.ReviewsTable,
+			Columns: []string{request.ReviewsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: approval.FieldID,
+					Column: review.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ru.mutation.RemovedApprovalsIDs(); len(nodes) > 0 && !ru.mutation.ApprovalsCleared() {
+	if nodes := ru.mutation.RemovedReviewsIDs(); len(nodes) > 0 && !ru.mutation.ReviewsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   request.ApprovalsTable,
-			Columns: request.ApprovalsPrimaryKey,
+			Table:   request.ReviewsTable,
+			Columns: []string{request.ReviewsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: approval.FieldID,
+					Column: review.FieldID,
 				},
 			},
 		}
@@ -350,17 +399,17 @@ func (ru *RequestUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ru.mutation.ApprovalsIDs(); len(nodes) > 0 {
+	if nodes := ru.mutation.ReviewsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   request.ApprovalsTable,
-			Columns: request.ApprovalsPrimaryKey,
+			Table:   request.ReviewsTable,
+			Columns: []string{request.ReviewsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: approval.FieldID,
+					Column: review.FieldID,
 				},
 			},
 		}
@@ -388,6 +437,12 @@ type RequestUpdateOne struct {
 	mutation *RequestMutation
 }
 
+// SetUpdateTime sets the "update_time" field.
+func (ruo *RequestUpdateOne) SetUpdateTime(t time.Time) *RequestUpdateOne {
+	ruo.mutation.SetUpdateTime(t)
+	return ruo
+}
+
 // SetType sets the "type" field.
 func (ruo *RequestUpdateOne) SetType(s string) *RequestUpdateOne {
 	ruo.mutation.SetType(s)
@@ -397,6 +452,20 @@ func (ruo *RequestUpdateOne) SetType(s string) *RequestUpdateOne {
 // SetRequestedBy sets the "requested_by" field.
 func (ruo *RequestUpdateOne) SetRequestedBy(s string) *RequestUpdateOne {
 	ruo.mutation.SetRequestedBy(s)
+	return ruo
+}
+
+// SetStatus sets the "status" field.
+func (ruo *RequestUpdateOne) SetStatus(r request.Status) *RequestUpdateOne {
+	ruo.mutation.SetStatus(r)
+	return ruo
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (ruo *RequestUpdateOne) SetNillableStatus(r *request.Status) *RequestUpdateOne {
+	if r != nil {
+		ruo.SetStatus(*r)
+	}
 	return ruo
 }
 
@@ -428,19 +497,19 @@ func (ruo *RequestUpdateOne) SetService(s *Service) *RequestUpdateOne {
 	return ruo.SetServiceID(s.ID)
 }
 
-// AddApprovalIDs adds the "Approvals" edge to the Approval entity by IDs.
-func (ruo *RequestUpdateOne) AddApprovalIDs(ids ...uuid.UUID) *RequestUpdateOne {
-	ruo.mutation.AddApprovalIDs(ids...)
+// AddReviewIDs adds the "Reviews" edge to the Review entity by IDs.
+func (ruo *RequestUpdateOne) AddReviewIDs(ids ...uuid.UUID) *RequestUpdateOne {
+	ruo.mutation.AddReviewIDs(ids...)
 	return ruo
 }
 
-// AddApprovals adds the "Approvals" edges to the Approval entity.
-func (ruo *RequestUpdateOne) AddApprovals(a ...*Approval) *RequestUpdateOne {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+// AddReviews adds the "Reviews" edges to the Review entity.
+func (ruo *RequestUpdateOne) AddReviews(r ...*Review) *RequestUpdateOne {
+	ids := make([]uuid.UUID, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
-	return ruo.AddApprovalIDs(ids...)
+	return ruo.AddReviewIDs(ids...)
 }
 
 // Mutation returns the RequestMutation object of the builder.
@@ -460,25 +529,25 @@ func (ruo *RequestUpdateOne) ClearService() *RequestUpdateOne {
 	return ruo
 }
 
-// ClearApprovals clears all "Approvals" edges to the Approval entity.
-func (ruo *RequestUpdateOne) ClearApprovals() *RequestUpdateOne {
-	ruo.mutation.ClearApprovals()
+// ClearReviews clears all "Reviews" edges to the Review entity.
+func (ruo *RequestUpdateOne) ClearReviews() *RequestUpdateOne {
+	ruo.mutation.ClearReviews()
 	return ruo
 }
 
-// RemoveApprovalIDs removes the "Approvals" edge to Approval entities by IDs.
-func (ruo *RequestUpdateOne) RemoveApprovalIDs(ids ...uuid.UUID) *RequestUpdateOne {
-	ruo.mutation.RemoveApprovalIDs(ids...)
+// RemoveReviewIDs removes the "Reviews" edge to Review entities by IDs.
+func (ruo *RequestUpdateOne) RemoveReviewIDs(ids ...uuid.UUID) *RequestUpdateOne {
+	ruo.mutation.RemoveReviewIDs(ids...)
 	return ruo
 }
 
-// RemoveApprovals removes "Approvals" edges to Approval entities.
-func (ruo *RequestUpdateOne) RemoveApprovals(a ...*Approval) *RequestUpdateOne {
-	ids := make([]uuid.UUID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+// RemoveReviews removes "Reviews" edges to Review entities.
+func (ruo *RequestUpdateOne) RemoveReviews(r ...*Review) *RequestUpdateOne {
+	ids := make([]uuid.UUID, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
-	return ruo.RemoveApprovalIDs(ids...)
+	return ruo.RemoveReviewIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -494,6 +563,7 @@ func (ruo *RequestUpdateOne) Save(ctx context.Context) (*Request, error) {
 		err  error
 		node *Request
 	)
+	ruo.defaults()
 	if len(ruo.hooks) == 0 {
 		if err = ruo.check(); err != nil {
 			return nil, err
@@ -554,6 +624,14 @@ func (ruo *RequestUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (ruo *RequestUpdateOne) defaults() {
+	if _, ok := ruo.mutation.UpdateTime(); !ok {
+		v := request.UpdateDefaultUpdateTime()
+		ruo.mutation.SetUpdateTime(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (ruo *RequestUpdateOne) check() error {
 	if v, ok := ruo.mutation.GetType(); ok {
@@ -564,6 +642,11 @@ func (ruo *RequestUpdateOne) check() error {
 	if v, ok := ruo.mutation.RequestedBy(); ok {
 		if err := request.RequestedByValidator(v); err != nil {
 			return &ValidationError{Name: "requested_by", err: fmt.Errorf(`ent: validator failed for field "Request.requested_by": %w`, err)}
+		}
+	}
+	if v, ok := ruo.mutation.Status(); ok {
+		if err := request.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Request.status": %w`, err)}
 		}
 	}
 	if _, ok := ruo.mutation.ProjectID(); ruo.mutation.ProjectCleared() && !ok {
@@ -610,6 +693,13 @@ func (ruo *RequestUpdateOne) sqlSave(ctx context.Context) (_node *Request, err e
 			}
 		}
 	}
+	if value, ok := ruo.mutation.UpdateTime(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: request.FieldUpdateTime,
+		})
+	}
 	if value, ok := ruo.mutation.GetType(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -622,6 +712,13 @@ func (ruo *RequestUpdateOne) sqlSave(ctx context.Context) (_node *Request, err e
 			Type:   field.TypeString,
 			Value:  value,
 			Column: request.FieldRequestedBy,
+		})
+	}
+	if value, ok := ruo.mutation.Status(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: request.FieldStatus,
 		})
 	}
 	if value, ok := ruo.mutation.Spec(); ok {
@@ -701,33 +798,33 @@ func (ruo *RequestUpdateOne) sqlSave(ctx context.Context) (_node *Request, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if ruo.mutation.ApprovalsCleared() {
+	if ruo.mutation.ReviewsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   request.ApprovalsTable,
-			Columns: request.ApprovalsPrimaryKey,
+			Table:   request.ReviewsTable,
+			Columns: []string{request.ReviewsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: approval.FieldID,
+					Column: review.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ruo.mutation.RemovedApprovalsIDs(); len(nodes) > 0 && !ruo.mutation.ApprovalsCleared() {
+	if nodes := ruo.mutation.RemovedReviewsIDs(); len(nodes) > 0 && !ruo.mutation.ReviewsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   request.ApprovalsTable,
-			Columns: request.ApprovalsPrimaryKey,
+			Table:   request.ReviewsTable,
+			Columns: []string{request.ReviewsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: approval.FieldID,
+					Column: review.FieldID,
 				},
 			},
 		}
@@ -736,17 +833,17 @@ func (ruo *RequestUpdateOne) sqlSave(ctx context.Context) (_node *Request, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ruo.mutation.ApprovalsIDs(); len(nodes) > 0 {
+	if nodes := ruo.mutation.ReviewsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   request.ApprovalsTable,
-			Columns: request.ApprovalsPrimaryKey,
+			Table:   request.ReviewsTable,
+			Columns: []string{request.ReviewsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: approval.FieldID,
+					Column: review.FieldID,
 				},
 			},
 		}

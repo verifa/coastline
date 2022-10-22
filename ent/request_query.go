@@ -12,26 +12,26 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"github.com/verifa/coastline/ent/approval"
 	"github.com/verifa/coastline/ent/predicate"
 	"github.com/verifa/coastline/ent/project"
 	"github.com/verifa/coastline/ent/request"
+	"github.com/verifa/coastline/ent/review"
 	"github.com/verifa/coastline/ent/service"
 )
 
 // RequestQuery is the builder for querying Request entities.
 type RequestQuery struct {
 	config
-	limit         *int
-	offset        *int
-	unique        *bool
-	order         []OrderFunc
-	fields        []string
-	predicates    []predicate.Request
-	withProject   *ProjectQuery
-	withService   *ServiceQuery
-	withApprovals *ApprovalQuery
-	withFKs       bool
+	limit       *int
+	offset      *int
+	unique      *bool
+	order       []OrderFunc
+	fields      []string
+	predicates  []predicate.Request
+	withProject *ProjectQuery
+	withService *ServiceQuery
+	withReviews *ReviewQuery
+	withFKs     bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -112,9 +112,9 @@ func (rq *RequestQuery) QueryService() *ServiceQuery {
 	return query
 }
 
-// QueryApprovals chains the current query on the "Approvals" edge.
-func (rq *RequestQuery) QueryApprovals() *ApprovalQuery {
-	query := &ApprovalQuery{config: rq.config}
+// QueryReviews chains the current query on the "Reviews" edge.
+func (rq *RequestQuery) QueryReviews() *ReviewQuery {
+	query := &ReviewQuery{config: rq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := rq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -125,8 +125,8 @@ func (rq *RequestQuery) QueryApprovals() *ApprovalQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(request.Table, request.FieldID, selector),
-			sqlgraph.To(approval.Table, approval.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, request.ApprovalsTable, request.ApprovalsPrimaryKey...),
+			sqlgraph.To(review.Table, review.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, request.ReviewsTable, request.ReviewsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
 		return fromU, nil
@@ -310,14 +310,14 @@ func (rq *RequestQuery) Clone() *RequestQuery {
 		return nil
 	}
 	return &RequestQuery{
-		config:        rq.config,
-		limit:         rq.limit,
-		offset:        rq.offset,
-		order:         append([]OrderFunc{}, rq.order...),
-		predicates:    append([]predicate.Request{}, rq.predicates...),
-		withProject:   rq.withProject.Clone(),
-		withService:   rq.withService.Clone(),
-		withApprovals: rq.withApprovals.Clone(),
+		config:      rq.config,
+		limit:       rq.limit,
+		offset:      rq.offset,
+		order:       append([]OrderFunc{}, rq.order...),
+		predicates:  append([]predicate.Request{}, rq.predicates...),
+		withProject: rq.withProject.Clone(),
+		withService: rq.withService.Clone(),
+		withReviews: rq.withReviews.Clone(),
 		// clone intermediate query.
 		sql:    rq.sql.Clone(),
 		path:   rq.path,
@@ -347,14 +347,14 @@ func (rq *RequestQuery) WithService(opts ...func(*ServiceQuery)) *RequestQuery {
 	return rq
 }
 
-// WithApprovals tells the query-builder to eager-load the nodes that are connected to
-// the "Approvals" edge. The optional arguments are used to configure the query builder of the edge.
-func (rq *RequestQuery) WithApprovals(opts ...func(*ApprovalQuery)) *RequestQuery {
-	query := &ApprovalQuery{config: rq.config}
+// WithReviews tells the query-builder to eager-load the nodes that are connected to
+// the "Reviews" edge. The optional arguments are used to configure the query builder of the edge.
+func (rq *RequestQuery) WithReviews(opts ...func(*ReviewQuery)) *RequestQuery {
+	query := &ReviewQuery{config: rq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	rq.withApprovals = query
+	rq.withReviews = query
 	return rq
 }
 
@@ -364,12 +364,12 @@ func (rq *RequestQuery) WithApprovals(opts ...func(*ApprovalQuery)) *RequestQuer
 // Example:
 //
 //	var v []struct {
-//		Type string `json:"type,omitempty"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Request.Query().
-//		GroupBy(request.FieldType).
+//		GroupBy(request.FieldCreateTime).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 //
@@ -393,11 +393,11 @@ func (rq *RequestQuery) GroupBy(field string, fields ...string) *RequestGroupBy 
 // Example:
 //
 //	var v []struct {
-//		Type string `json:"type,omitempty"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //	}
 //
 //	client.Request.Query().
-//		Select(request.FieldType).
+//		Select(request.FieldCreateTime).
 //		Scan(ctx, &v)
 //
 func (rq *RequestQuery) Select(fields ...string) *RequestSelect {
@@ -432,7 +432,7 @@ func (rq *RequestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Requ
 		loadedTypes = [3]bool{
 			rq.withProject != nil,
 			rq.withService != nil,
-			rq.withApprovals != nil,
+			rq.withReviews != nil,
 		}
 	)
 	if rq.withProject != nil || rq.withService != nil {
@@ -471,10 +471,10 @@ func (rq *RequestQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Requ
 			return nil, err
 		}
 	}
-	if query := rq.withApprovals; query != nil {
-		if err := rq.loadApprovals(ctx, query, nodes,
-			func(n *Request) { n.Edges.Approvals = []*Approval{} },
-			func(n *Request, e *Approval) { n.Edges.Approvals = append(n.Edges.Approvals, e) }); err != nil {
+	if query := rq.withReviews; query != nil {
+		if err := rq.loadReviews(ctx, query, nodes,
+			func(n *Request) { n.Edges.Reviews = []*Review{} },
+			func(n *Request, e *Review) { n.Edges.Reviews = append(n.Edges.Reviews, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -539,61 +539,34 @@ func (rq *RequestQuery) loadService(ctx context.Context, query *ServiceQuery, no
 	}
 	return nil
 }
-func (rq *RequestQuery) loadApprovals(ctx context.Context, query *ApprovalQuery, nodes []*Request, init func(*Request), assign func(*Request, *Approval)) error {
-	edgeIDs := make([]driver.Value, len(nodes))
-	byID := make(map[uuid.UUID]*Request)
-	nids := make(map[uuid.UUID]map[*Request]struct{})
-	for i, node := range nodes {
-		edgeIDs[i] = node.ID
-		byID[node.ID] = node
+func (rq *RequestQuery) loadReviews(ctx context.Context, query *ReviewQuery, nodes []*Request, init func(*Request), assign func(*Request, *Review)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Request)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
 		if init != nil {
-			init(node)
+			init(nodes[i])
 		}
 	}
-	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(request.ApprovalsTable)
-		s.Join(joinT).On(s.C(approval.FieldID), joinT.C(request.ApprovalsPrimaryKey[0]))
-		s.Where(sql.InValues(joinT.C(request.ApprovalsPrimaryKey[1]), edgeIDs...))
-		columns := s.SelectedColumns()
-		s.Select(joinT.C(request.ApprovalsPrimaryKey[1]))
-		s.AppendSelect(columns...)
-		s.SetDistinct(false)
-	})
-	if err := query.prepareQuery(ctx); err != nil {
-		return err
-	}
-	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
-		assign := spec.Assign
-		values := spec.ScanValues
-		spec.ScanValues = func(columns []string) ([]any, error) {
-			values, err := values(columns[1:])
-			if err != nil {
-				return nil, err
-			}
-			return append([]any{new(uuid.UUID)}, values...), nil
-		}
-		spec.Assign = func(columns []string, values []any) error {
-			outValue := *values[0].(*uuid.UUID)
-			inValue := *values[1].(*uuid.UUID)
-			if nids[inValue] == nil {
-				nids[inValue] = map[*Request]struct{}{byID[outValue]: struct{}{}}
-				return assign(columns[1:], values[1:])
-			}
-			nids[inValue][byID[outValue]] = struct{}{}
-			return nil
-		}
-	})
+	query.withFKs = true
+	query.Where(predicate.Review(func(s *sql.Selector) {
+		s.Where(sql.InValues(request.ReviewsColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		nodes, ok := nids[n.ID]
+		fk := n.review_request
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "review_request" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected "Approvals" node returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "review_request" returned %v for node %v`, *fk, n.ID)
 		}
-		for kn := range nodes {
-			assign(kn, n)
-		}
+		assign(node, n)
 	}
 	return nil
 }

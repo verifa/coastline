@@ -280,6 +280,41 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /requests/{id}/review:
+    post:
+      description: Review a request
+      operationId: reviewRequest
+      parameters:
+        - name: id
+          in: path
+          description: ID of request to review
+          required: true
+          schema:
+            type: string
+            format: uuid
+            x-go-type: uuid.UUID
+            x-go-type-import:
+              path: github.com/google/uuid
+      requestBody:
+        description: Review to add to request
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewRequest"
+      responses:
+        "200":
+          description: review response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /requestsspec:
     get:
       description: |
@@ -410,12 +445,16 @@ components:
       required:
         - type
         - requested_by
+        - status
         - spec
       properties:
         type:
           type: string
         requested_by:
           type: string
+        status:
+          type: string
+          enum: ["pending_approval", "rejected", "approved"]
         spec:
           type: object
     Request:
@@ -424,6 +463,9 @@ components:
         - type: object
           required:
             - id
+            - project
+            - service
+            - reviews
           properties:
             id:
               type: string
@@ -435,6 +477,10 @@ components:
               $ref: "#/components/schemas/Project"
             service:
               $ref: "#/components/schemas/Service"
+            reviews:
+              type: array
+              items:
+                $ref: "#/components/schemas/Review"
     NewRequest:
       allOf:
         - $ref: "#/components/schemas/RequestCommon"
@@ -465,6 +511,34 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Request"
+    #
+    # Review types
+    #
+    Review:
+      allOf:
+        - $ref: "#/components/schemas/NewReview"
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+              format: uuid
+              x-go-type: uuid.UUID
+              x-go-type-import:
+                path: github.com/google/uuid
+    NewReview:
+      type: object
+      required:
+        - status
+        - type
+      properties:
+        status:
+          type: string
+          enum: ["reject", "approve"]
+        type:
+          type: string
+          enum: ["user", "auto"]
 
     UserInfo:
       type: object

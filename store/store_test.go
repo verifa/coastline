@@ -43,8 +43,24 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	fmt.Println(projectResp)
 
+	{
+		review, err := store.CreateReview(request.Id, &oapi.NewReview{
+			Status: oapi.NewReviewStatusApprove,
+			Type:   oapi.NewReviewTypeUser,
+		})
+		require.NoError(t, err)
+		spew.Dump(review)
+	}
+	{
+		review, err := store.CreateReview(request.Id, &oapi.NewReview{
+			Status: oapi.NewReviewStatusApprove,
+			Type:   oapi.NewReviewTypeUser,
+		})
+		require.NoError(t, err)
+		spew.Dump(review)
+	}
+
 	requestResp, err := store.QueryRequests()
 	require.NoError(t, err)
 	spew.Dump(requestResp)
-
 }

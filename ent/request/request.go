@@ -3,6 +3,9 @@
 package request
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -11,18 +14,24 @@ const (
 	Label = "request"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldCreateTime holds the string denoting the create_time field in the database.
+	FieldCreateTime = "create_time"
+	// FieldUpdateTime holds the string denoting the update_time field in the database.
+	FieldUpdateTime = "update_time"
 	// FieldType holds the string denoting the type field in the database.
 	FieldType = "type"
 	// FieldRequestedBy holds the string denoting the requested_by field in the database.
 	FieldRequestedBy = "requested_by"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
 	// FieldSpec holds the string denoting the spec field in the database.
 	FieldSpec = "spec"
 	// EdgeProject holds the string denoting the project edge name in mutations.
 	EdgeProject = "Project"
 	// EdgeService holds the string denoting the service edge name in mutations.
 	EdgeService = "Service"
-	// EdgeApprovals holds the string denoting the approvals edge name in mutations.
-	EdgeApprovals = "Approvals"
+	// EdgeReviews holds the string denoting the reviews edge name in mutations.
+	EdgeReviews = "Reviews"
 	// Table holds the table name of the request in the database.
 	Table = "requests"
 	// ProjectTable is the table that holds the Project relation/edge.
@@ -39,18 +48,23 @@ const (
 	ServiceInverseTable = "services"
 	// ServiceColumn is the table column denoting the Service relation/edge.
 	ServiceColumn = "request_service"
-	// ApprovalsTable is the table that holds the Approvals relation/edge. The primary key declared below.
-	ApprovalsTable = "approval_Request"
-	// ApprovalsInverseTable is the table name for the Approval entity.
-	// It exists in this package in order to avoid circular dependency with the "approval" package.
-	ApprovalsInverseTable = "approvals"
+	// ReviewsTable is the table that holds the Reviews relation/edge.
+	ReviewsTable = "reviews"
+	// ReviewsInverseTable is the table name for the Review entity.
+	// It exists in this package in order to avoid circular dependency with the "review" package.
+	ReviewsInverseTable = "reviews"
+	// ReviewsColumn is the table column denoting the Reviews relation/edge.
+	ReviewsColumn = "review_request"
 )
 
 // Columns holds all SQL columns for request fields.
 var Columns = []string{
 	FieldID,
+	FieldCreateTime,
+	FieldUpdateTime,
 	FieldType,
 	FieldRequestedBy,
+	FieldStatus,
 	FieldSpec,
 }
 
@@ -60,12 +74,6 @@ var ForeignKeys = []string{
 	"request_project",
 	"request_service",
 }
-
-var (
-	// ApprovalsPrimaryKey and ApprovalsColumn2 are the table columns denoting the
-	// primary key for the Approvals relation (M2M).
-	ApprovalsPrimaryKey = []string{"approval_id", "request_id"}
-)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -83,6 +91,12 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultCreateTime holds the default value on creation for the "create_time" field.
+	DefaultCreateTime func() time.Time
+	// DefaultUpdateTime holds the default value on creation for the "update_time" field.
+	DefaultUpdateTime func() time.Time
+	// UpdateDefaultUpdateTime holds the default value on update for the "update_time" field.
+	UpdateDefaultUpdateTime func() time.Time
 	// TypeValidator is a validator for the "type" field. It is called by the builders before save.
 	TypeValidator func(string) error
 	// RequestedByValidator is a validator for the "requested_by" field. It is called by the builders before save.
@@ -90,3 +104,30 @@ var (
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
+
+// Status defines the type for the "status" enum field.
+type Status string
+
+// StatusPendingApproval is the default value of the Status enum.
+const DefaultStatus = StatusPendingApproval
+
+// Status values.
+const (
+	StatusPendingApproval Status = "pending_approval"
+	StatusRejected        Status = "rejected"
+	StatusApproved        Status = "approved"
+)
+
+func (s Status) String() string {
+	return string(s)
+}
+
+// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
+func StatusValidator(s Status) error {
+	switch s {
+	case StatusPendingApproval, StatusRejected, StatusApproved:
+		return nil
+	default:
+		return fmt.Errorf("request: invalid enum value for status field: %q", s)
+	}
+}

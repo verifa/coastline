@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"entgo.io/ent/schema/mixin"
 	"github.com/google/uuid"
 )
 
@@ -30,5 +31,11 @@ func (Service) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("id").
 			Unique(),
+	}
+}
+
+func (Service) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		mixin.Time{},
 	}
 }

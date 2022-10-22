@@ -9,49 +9,49 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/verifa/coastline/ent/approval"
 	"github.com/verifa/coastline/ent/predicate"
+	"github.com/verifa/coastline/ent/review"
 )
 
-// ApprovalDelete is the builder for deleting a Approval entity.
-type ApprovalDelete struct {
+// ReviewDelete is the builder for deleting a Review entity.
+type ReviewDelete struct {
 	config
 	hooks    []Hook
-	mutation *ApprovalMutation
+	mutation *ReviewMutation
 }
 
-// Where appends a list predicates to the ApprovalDelete builder.
-func (ad *ApprovalDelete) Where(ps ...predicate.Approval) *ApprovalDelete {
-	ad.mutation.Where(ps...)
-	return ad
+// Where appends a list predicates to the ReviewDelete builder.
+func (rd *ReviewDelete) Where(ps ...predicate.Review) *ReviewDelete {
+	rd.mutation.Where(ps...)
+	return rd
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (ad *ApprovalDelete) Exec(ctx context.Context) (int, error) {
+func (rd *ReviewDelete) Exec(ctx context.Context) (int, error) {
 	var (
 		err      error
 		affected int
 	)
-	if len(ad.hooks) == 0 {
-		affected, err = ad.sqlExec(ctx)
+	if len(rd.hooks) == 0 {
+		affected, err = rd.sqlExec(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ApprovalMutation)
+			mutation, ok := m.(*ReviewMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
 			}
-			ad.mutation = mutation
-			affected, err = ad.sqlExec(ctx)
+			rd.mutation = mutation
+			affected, err = rd.sqlExec(ctx)
 			mutation.done = true
 			return affected, err
 		})
-		for i := len(ad.hooks) - 1; i >= 0; i-- {
-			if ad.hooks[i] == nil {
+		for i := len(rd.hooks) - 1; i >= 0; i-- {
+			if rd.hooks[i] == nil {
 				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
 			}
-			mut = ad.hooks[i](mut)
+			mut = rd.hooks[i](mut)
 		}
-		if _, err := mut.Mutate(ctx, ad.mutation); err != nil {
+		if _, err := mut.Mutate(ctx, rd.mutation); err != nil {
 			return 0, err
 		}
 	}
@@ -59,57 +59,57 @@ func (ad *ApprovalDelete) Exec(ctx context.Context) (int, error) {
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (ad *ApprovalDelete) ExecX(ctx context.Context) int {
-	n, err := ad.Exec(ctx)
+func (rd *ReviewDelete) ExecX(ctx context.Context) int {
+	n, err := rd.Exec(ctx)
 	if err != nil {
 		panic(err)
 	}
 	return n
 }
 
-func (ad *ApprovalDelete) sqlExec(ctx context.Context) (int, error) {
+func (rd *ReviewDelete) sqlExec(ctx context.Context) (int, error) {
 	_spec := &sqlgraph.DeleteSpec{
 		Node: &sqlgraph.NodeSpec{
-			Table: approval.Table,
+			Table: review.Table,
 			ID: &sqlgraph.FieldSpec{
 				Type:   field.TypeUUID,
-				Column: approval.FieldID,
+				Column: review.FieldID,
 			},
 		},
 	}
-	if ps := ad.mutation.predicates; len(ps) > 0 {
+	if ps := rd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	affected, err := sqlgraph.DeleteNodes(ctx, ad.driver, _spec)
+	affected, err := sqlgraph.DeleteNodes(ctx, rd.driver, _spec)
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
 	return affected, err
 }
 
-// ApprovalDeleteOne is the builder for deleting a single Approval entity.
-type ApprovalDeleteOne struct {
-	ad *ApprovalDelete
+// ReviewDeleteOne is the builder for deleting a single Review entity.
+type ReviewDeleteOne struct {
+	rd *ReviewDelete
 }
 
 // Exec executes the deletion query.
-func (ado *ApprovalDeleteOne) Exec(ctx context.Context) error {
-	n, err := ado.ad.Exec(ctx)
+func (rdo *ReviewDeleteOne) Exec(ctx context.Context) error {
+	n, err := rdo.rd.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
 	case n == 0:
-		return &NotFoundError{approval.Label}
+		return &NotFoundError{review.Label}
 	default:
 		return nil
 	}
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (ado *ApprovalDeleteOne) ExecX(ctx context.Context) {
-	ado.ad.ExecX(ctx)
+func (rdo *ReviewDeleteOne) ExecX(ctx context.Context) {
+	rdo.rd.ExecX(ctx)
 }

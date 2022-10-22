@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"entgo.io/ent/schema/mixin"
 	"github.com/google/uuid"
 )
 
@@ -20,6 +21,7 @@ func (Request) Fields() []ent.Field {
 			Default(uuid.New),
 		field.String("type").NotEmpty(),
 		field.String("requested_by").NotEmpty(),
+		field.Enum("status").Values("pending_approval", "rejected", "approved").Default("pending_approval"),
 		field.JSON("spec", RequestSpec{}),
 	}
 }
@@ -28,7 +30,7 @@ func (Request) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("Project", Project.Type).Required().Unique(),
 		edge.To("Service", Service.Type).Required().Unique(),
-		edge.From("Approvals", Approval.Type).Ref("Request"),
+		edge.From("Reviews", Review.Type).Ref("Request"),
 	}
 }
 
@@ -37,4 +39,10 @@ func (Request) Indexes() []ent.Index {
 		index.Fields("id").
 			Unique(),
 	}
+}
+
+func (Request) Mixin() []ent.Mixin {
+    return []ent.Mixin{
+        mixin.Time{},
+    }
 }

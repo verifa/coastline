@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -26,6 +27,12 @@ type ServiceUpdate struct {
 // Where appends a list predicates to the ServiceUpdate builder.
 func (su *ServiceUpdate) Where(ps ...predicate.Service) *ServiceUpdate {
 	su.mutation.Where(ps...)
+	return su
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (su *ServiceUpdate) SetUpdateTime(t time.Time) *ServiceUpdate {
+	su.mutation.SetUpdateTime(t)
 	return su
 }
 
@@ -82,6 +89,7 @@ func (su *ServiceUpdate) Save(ctx context.Context) (int, error) {
 		err      error
 		affected int
 	)
+	su.defaults()
 	if len(su.hooks) == 0 {
 		if err = su.check(); err != nil {
 			return 0, err
@@ -136,6 +144,14 @@ func (su *ServiceUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (su *ServiceUpdate) defaults() {
+	if _, ok := su.mutation.UpdateTime(); !ok {
+		v := service.UpdateDefaultUpdateTime()
+		su.mutation.SetUpdateTime(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (su *ServiceUpdate) check() error {
 	if v, ok := su.mutation.Name(); ok {
@@ -163,6 +179,13 @@ func (su *ServiceUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := su.mutation.UpdateTime(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: service.FieldUpdateTime,
+		})
 	}
 	if value, ok := su.mutation.Name(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
@@ -244,6 +267,12 @@ type ServiceUpdateOne struct {
 	mutation *ServiceMutation
 }
 
+// SetUpdateTime sets the "update_time" field.
+func (suo *ServiceUpdateOne) SetUpdateTime(t time.Time) *ServiceUpdateOne {
+	suo.mutation.SetUpdateTime(t)
+	return suo
+}
+
 // SetName sets the "name" field.
 func (suo *ServiceUpdateOne) SetName(s string) *ServiceUpdateOne {
 	suo.mutation.SetName(s)
@@ -304,6 +333,7 @@ func (suo *ServiceUpdateOne) Save(ctx context.Context) (*Service, error) {
 		err  error
 		node *Service
 	)
+	suo.defaults()
 	if len(suo.hooks) == 0 {
 		if err = suo.check(); err != nil {
 			return nil, err
@@ -364,6 +394,14 @@ func (suo *ServiceUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (suo *ServiceUpdateOne) defaults() {
+	if _, ok := suo.mutation.UpdateTime(); !ok {
+		v := service.UpdateDefaultUpdateTime()
+		suo.mutation.SetUpdateTime(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (suo *ServiceUpdateOne) check() error {
 	if v, ok := suo.mutation.Name(); ok {
@@ -408,6 +446,13 @@ func (suo *ServiceUpdateOne) sqlSave(ctx context.Context) (_node *Service, err e
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := suo.mutation.UpdateTime(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: service.FieldUpdateTime,
+		})
 	}
 	if value, ok := suo.mutation.Name(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{

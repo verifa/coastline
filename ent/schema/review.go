@@ -9,32 +9,33 @@ import (
 	"github.com/google/uuid"
 )
 
-type Project struct {
+type Review struct {
 	ent.Schema
 }
 
-func (Project) Fields() []ent.Field {
+func (Review) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New),
-		field.String("name").NotEmpty().Unique(),
+		field.Enum("status").Values("reject", "approve"),
+		field.Enum("type").Values("user", "auto").Default("user"),
 	}
 }
 
-func (Project) Edges() []ent.Edge {
+func (Review) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("Requests", Request.Type).Ref("Project"),
+		edge.To("Request", Request.Type).Unique().Required(),
 	}
 }
 
-func (Project) Indexes() []ent.Index {
+func (Review) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("id").
 			Unique(),
 	}
 }
 
-func (Project) Mixin() []ent.Mixin {
+func (Review) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		mixin.Time{},
 	}

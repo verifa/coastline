@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
@@ -20,10 +21,16 @@ type Request struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
+	// CreateTime holds the value of the "create_time" field.
+	CreateTime time.Time `json:"create_time,omitempty"`
+	// UpdateTime holds the value of the "update_time" field.
+	UpdateTime time.Time `json:"update_time,omitempty"`
 	// Type holds the value of the "type" field.
 	Type string `json:"type,omitempty"`
 	// RequestedBy holds the value of the "requested_by" field.
 	RequestedBy string `json:"requested_by,omitempty"`
+	// Status holds the value of the "status" field.
+	Status request.Status `json:"status,omitempty"`
 	// Spec holds the value of the "spec" field.
 	Spec schema.RequestSpec `json:"spec,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -39,8 +46,8 @@ type RequestEdges struct {
 	Project *Project `json:"Project,omitempty"`
 	// Service holds the value of the Service edge.
 	Service *Service `json:"Service,omitempty"`
-	// Approvals holds the value of the Approvals edge.
-	Approvals []*Approval `json:"Approvals,omitempty"`
+	// Reviews holds the value of the Reviews edge.
+	Reviews []*Review `json:"Reviews,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [3]bool
@@ -72,13 +79,13 @@ func (e RequestEdges) ServiceOrErr() (*Service, error) {
 	return nil, &NotLoadedError{edge: "Service"}
 }
 
-// ApprovalsOrErr returns the Approvals value or an error if the edge
+// ReviewsOrErr returns the Reviews value or an error if the edge
 // was not loaded in eager-loading.
-func (e RequestEdges) ApprovalsOrErr() ([]*Approval, error) {
+func (e RequestEdges) ReviewsOrErr() ([]*Review, error) {
 	if e.loadedTypes[2] {
-		return e.Approvals, nil
+		return e.Reviews, nil
 	}
-	return nil, &NotLoadedError{edge: "Approvals"}
+	return nil, &NotLoadedError{edge: "Reviews"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -88,8 +95,10 @@ func (*Request) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case request.FieldSpec:
 			values[i] = new([]byte)
-		case request.FieldType, request.FieldRequestedBy:
+		case request.FieldType, request.FieldRequestedBy, request.FieldStatus:
 			values[i] = new(sql.NullString)
+		case request.FieldCreateTime, request.FieldUpdateTime:
+			values[i] = new(sql.NullTime)
 		case request.FieldID:
 			values[i] = new(uuid.UUID)
 		case request.ForeignKeys[0]: // request_project
@@ -117,6 +126,18 @@ func (r *Request) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				r.ID = *value
 			}
+		case request.FieldCreateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field create_time", values[i])
+			} else if value.Valid {
+				r.CreateTime = value.Time
+			}
+		case request.FieldUpdateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field update_time", values[i])
+			} else if value.Valid {
+				r.UpdateTime = value.Time
+			}
 		case request.FieldType:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field type", values[i])
@@ -128,6 +149,12 @@ func (r *Request) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field requested_by", values[i])
 			} else if value.Valid {
 				r.RequestedBy = value.String
+			}
+		case request.FieldStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				r.Status = request.Status(value.String)
 			}
 		case request.FieldSpec:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -166,9 +193,9 @@ func (r *Request) QueryService() *ServiceQuery {
 	return (&RequestClient{config: r.config}).QueryService(r)
 }
 
-// QueryApprovals queries the "Approvals" edge of the Request entity.
-func (r *Request) QueryApprovals() *ApprovalQuery {
-	return (&RequestClient{config: r.config}).QueryApprovals(r)
+// QueryReviews queries the "Reviews" edge of the Request entity.
+func (r *Request) QueryReviews() *ReviewQuery {
+	return (&RequestClient{config: r.config}).QueryReviews(r)
 }
 
 // Update returns a builder for updating this Request.
@@ -194,11 +221,20 @@ func (r *Request) String() string {
 	var builder strings.Builder
 	builder.WriteString("Request(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", r.ID))
+	builder.WriteString("create_time=")
+	builder.WriteString(r.CreateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("update_time=")
+	builder.WriteString(r.UpdateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("type=")
 	builder.WriteString(r.Type)
 	builder.WriteString(", ")
 	builder.WriteString("requested_by=")
 	builder.WriteString(r.RequestedBy)
+	builder.WriteString(", ")
+	builder.WriteString("status=")
+	builder.WriteString(fmt.Sprintf("%v", r.Status))
 	builder.WriteString(", ")
 	builder.WriteString("spec=")
 	builder.WriteString(fmt.Sprintf("%v", r.Spec))

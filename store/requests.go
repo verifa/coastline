@@ -5,6 +5,8 @@ import (
 
 	"github.com/verifa/coastline/ent"
 	"github.com/verifa/coastline/ent/predicate"
+	"github.com/verifa/coastline/ent/request"
+	"github.com/verifa/coastline/ent/review"
 	"github.com/verifa/coastline/server/oapi"
 )
 
@@ -12,6 +14,7 @@ func (s *Store) QueryRequests(ps ...predicate.Request) (*oapi.RequestsResp, erro
 	dbRequests, err := s.client.Request.Query().Where(ps...).
 		WithProject().
 		WithService().
+		WithReviews().
 		All(s.ctx)
 	if err != nil {
 		return nil, fmt.Errorf("querying requests: %w", err)
@@ -41,23 +44,72 @@ func (s *Store) CreateRequest(req *oapi.NewRequest) (*oapi.Request, error) {
 	return dbRequestToAPI(dbRequest), nil
 }
 
+// HandleNewReview is called whenever a new review is added to a request and is
+// responsible for re-evaluating the status of a request
+func (s *Store) HandleNewReview(m *ent.ReviewMutation) error {
+	requestID, ok := m.RequestID()
+	if !ok {
+		id, _ := m.ID()
+		return fmt.Errorf("no request for review with ID: %s", id)
+	}
+	c := m.Client()
+
+	// Current logic for this is really bad and needs re-work.
+	// Right now it checks if there are any reviews that reject and sets status
+	// to rejected. If any approve, and no rejects, set to approve
+	dbReviews, err := c.Review.Query().
+		Where(review.HasRequestWith(request.ID(requestID))).
+		// Order by date time
+		Order(ent.Desc(review.FieldCreateTime)).
+		All(s.ctx)
+	if err != nil {
+		return fmt.Errorf("getting reviews: %w", err)
+	}
+
+	var approve bool
+	for _, r := range dbReviews {
+		if r.Status == review.StatusApprove {
+			approve = true
+		} else {
+			approve = false
+			break
+		}
+	}
+	if len(dbReviews) > 0 {
+		var status request.Status
+		if approve {
+			status = request.StatusApproved
+		} else {
+			status = request.StatusRejected
+		}
+		_, err := c.Request.UpdateOneID(requestID).
+			SetStatus(status).
+			Save(s.ctx)
+		if err != nil {
+			return fmt.Errorf("updating request with ID %s: %w", requestID, err)
+		}
+	}
+	return nil
+}
+
 func dbRequestToAPI(dbRequest *ent.Request) *oapi.Request {
-	var (
-		project *oapi.Project
-		service *oapi.Service
-	)
-	if dbRequest.Edges.Project != nil {
-		project = dbProjectToAPI(dbRequest.Edges.Project)
-	}
-	if dbRequest.Edges.Service != nil {
-		service = dbServiceToAPI(dbRequest.Edges.Service)
-	}
-	return &oapi.Request{
+	request := oapi.Request{
 		Id:          dbRequest.ID,
 		Type:        dbRequest.Type,
 		RequestedBy: dbRequest.RequestedBy,
+		Status:      oapi.RequestStatus(dbRequest.Status),
 		Spec:        dbRequest.Spec,
-		Project:     project,
-		Service:     service,
 	}
+	if dbRequest.Edges.Project != nil {
+		request.Project = *dbProjectToAPI(dbRequest.Edges.Project)
+	}
+	if dbRequest.Edges.Service != nil {
+		request.Service = *dbServiceToAPI(dbRequest.Edges.Service)
+	}
+	if dbRequest.Edges.Reviews != nil {
+		for _, dbReview := range dbRequest.Edges.Reviews {
+			request.Reviews = append(request.Reviews, *dbReviewToAPI(dbReview))
+		}
+	}
+	return &request
 }
