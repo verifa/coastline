@@ -481,6 +481,9 @@ components:
           type: string
         picture:
           type: string
+    # TODO: remove this as we probably don't need it.
+    # Responses already have a code/status (in header)
+    # and the message is sent as plain text
     Error:
       type: object
       required:
@@ -489,6 +492,5 @@ components:
       properties:
         code:
           type: integer
-          format: int32
         message:
           type: string

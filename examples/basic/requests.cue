@@ -42,6 +42,7 @@ package basic
 #JenkinsServerRequest: {
 	type: "JenkinsServerRequest"
 	spec: {
-		name: string
+		// Name must not contain space or strange characters
+		name: =~"^[A-Za-z0-9-]+$"
 	}
 }

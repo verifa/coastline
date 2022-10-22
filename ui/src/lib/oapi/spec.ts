@@ -94,7 +94,6 @@ export interface components {
       picture?: string;
     };
     Error: {
-      /** Format: int32 */
       code: number;
       message: string;
     };

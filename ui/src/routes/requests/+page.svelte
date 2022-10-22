@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { createHttpStore } from '$lib/http/store';
 
 	import type { components } from '$lib/oapi/spec';
@@ -32,3 +33,5 @@
 		{/each}
 	</div>
 {/if}
+
+<a href="{base}/requests/new" class="btn btn-primary">New Request</a>

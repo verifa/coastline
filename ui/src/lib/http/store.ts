@@ -2,7 +2,9 @@ import { writable } from 'svelte/store'
 
 export interface Response<Data> {
     fetching: boolean
-    ok?: boolean
+    ok: boolean
+    // requested is marked as true after at least one request has been made
+    requested: boolean
     data?: Data
     status?: number
     text?: string
@@ -13,7 +15,8 @@ export interface Response<Data> {
 export function createHttpStore<Data>() {
     const store = writable<Response<Data>>({
         fetching: false,
-        ok: false
+        ok: false,
+        requested: false,
     })
 
     function request(method: string, path: string, params?: Record<string, string>, data?: object) {
@@ -21,6 +24,7 @@ export function createHttpStore<Data>() {
         store.update((value) => {
             value.ok = false
             value.fetching = true;
+            value.requested = true;
             value.error = undefined;
             value.data = undefined;
             return value;

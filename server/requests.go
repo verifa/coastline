@@ -13,6 +13,7 @@ func (s *ServerImpl) GetRequests(w http.ResponseWriter, r *http.Request, params 
 	resp, err := s.store.QueryRequests()
 	if err != nil {
 		http.Error(w, "Querying requests: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 	returnJSON(w, resp)
 }
@@ -21,6 +22,11 @@ func (s *ServerImpl) CreateRequest(w http.ResponseWriter, r *http.Request) {
 	var req oapi.NewRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Decoding request body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	// Validate the request against the requests engine
+	if err := s.engine.Validate(req); err != nil {
+		http.Error(w, "Validation failed: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 	request, err := s.store.CreateRequest(&req)
