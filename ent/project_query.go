@@ -299,7 +299,6 @@ func (pq *ProjectQuery) WithRequests(opts ...func(*RequestQuery)) *ProjectQuery 
 //		GroupBy(project.FieldCreateTime).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (pq *ProjectQuery) GroupBy(field string, fields ...string) *ProjectGroupBy {
 	grbuild := &ProjectGroupBy{config: pq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -326,7 +325,6 @@ func (pq *ProjectQuery) GroupBy(field string, fields ...string) *ProjectGroupBy 
 //	client.Project.Query().
 //		Select(project.FieldCreateTime).
 //		Scan(ctx, &v)
-//
 func (pq *ProjectQuery) Select(fields ...string) *ProjectSelect {
 	pq.fields = append(pq.fields, fields...)
 	selbuild := &ProjectSelect{ProjectQuery: pq}

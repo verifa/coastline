@@ -372,7 +372,6 @@ func (rq *RequestQuery) WithReviews(opts ...func(*ReviewQuery)) *RequestQuery {
 //		GroupBy(request.FieldCreateTime).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (rq *RequestQuery) GroupBy(field string, fields ...string) *RequestGroupBy {
 	grbuild := &RequestGroupBy{config: rq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -399,7 +398,6 @@ func (rq *RequestQuery) GroupBy(field string, fields ...string) *RequestGroupBy 
 //	client.Request.Query().
 //		Select(request.FieldCreateTime).
 //		Scan(ctx, &v)
-//
 func (rq *RequestQuery) Select(fields ...string) *RequestSelect {
 	rq.fields = append(rq.fields, fields...)
 	selbuild := &RequestSelect{RequestQuery: rq}

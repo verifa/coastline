@@ -299,7 +299,6 @@ func (sq *ServiceQuery) WithRequests(opts ...func(*RequestQuery)) *ServiceQuery 
 //		GroupBy(service.FieldCreateTime).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (sq *ServiceQuery) GroupBy(field string, fields ...string) *ServiceGroupBy {
 	grbuild := &ServiceGroupBy{config: sq.config}
 	grbuild.fields = append([]string{field}, fields...)
@@ -326,7 +325,6 @@ func (sq *ServiceQuery) GroupBy(field string, fields ...string) *ServiceGroupBy 
 //	client.Service.Query().
 //		Select(service.FieldCreateTime).
 //		Scan(ctx, &v)
-//
 func (sq *ServiceQuery) Select(fields ...string) *ServiceSelect {
 	sq.fields = append(sq.fields, fields...)
 	selbuild := &ServiceSelect{ServiceQuery: sq}
