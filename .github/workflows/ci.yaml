@@ -21,9 +21,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.19
-          check-latest: true
+          go-version: 1.18.3
+          # check-latest: true
           cache: true
+      - name: Test gen
+        run: |
+          go generate ./ent
+          git diff
       - name: Setup NodeJS
         uses: actions/setup-node@v3
         with:
