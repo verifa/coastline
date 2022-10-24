@@ -3,6 +3,11 @@
 # Generated files
 server/oapi
 
+# Ent generated files
+ent/*
+!ent/generate.go
+!ent/schema
+
 # Goreleaser dist folder
 dist/
 
