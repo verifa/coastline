@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
 	import { createHttpStore } from '$lib/http/store';
-	import type { components } from '$lib/oapi/spec';
+	import type { components } from '$lib/oapi/gen/types';
 	import { writable } from 'svelte/store';
 
 	type NewProject = components['schemas']['NewProject'];

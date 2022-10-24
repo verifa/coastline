@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { components } from '$lib/oapi/spec';
+	import type { components } from '$lib/oapi/gen/types';
 
 	type Request = components['schemas']['Request'];
 	export let requests: Request[] = [];

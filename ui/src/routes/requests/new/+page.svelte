@@ -4,7 +4,7 @@
 	import type { RequestSpec } from '$lib/oapi/parse';
 
 	import type { OpenAPI3 } from 'openapi-typescript';
-	import type { components } from '$lib/oapi/spec';
+	import type { components } from '$lib/oapi/gen/types';
 	import ObjectForm from './objectForm.svelte';
 	import { session } from '$lib/session/store';
 	import { writable } from 'svelte/store';

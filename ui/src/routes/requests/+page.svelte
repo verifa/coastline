@@ -2,7 +2,7 @@
 	import { base } from '$app/paths';
 	import { createHttpStore } from '$lib/http/store';
 
-	import type { components } from '$lib/oapi/spec';
+	import type { components } from '$lib/oapi/gen/types';
 	import RequestTable from './requestTable.svelte';
 
 	type RequestResp = components['schemas']['RequestsResp'];
