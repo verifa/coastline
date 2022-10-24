@@ -1,5 +1,5 @@
 <script lang="ts">
-	export let text: string;
+	export let text: string = 'Loading';
 	export let height = 5;
 	export let width = 5;
 </script>

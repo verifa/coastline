@@ -102,7 +102,8 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 			//
 			r.Get("/requests", wrapper.GetRequests)
 			r.Post("/requests", wrapper.CreateRequest)
-			r.Post("/requests/{id}", wrapper.GetRequestByID)
+			r.Get("/requests/{id}", wrapper.GetRequestByID)
+			r.Post("/requests/{id}/review", wrapper.ReviewRequest)
 			r.Get("/requestsspec", wrapper.GetRequestsSpec)
 			//
 			// UserInfo

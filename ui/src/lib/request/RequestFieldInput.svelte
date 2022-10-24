@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import type { Property } from './spec';
 
 	export let store: any;
@@ -10,12 +9,12 @@
 
 {#if prop.schema.enum}
 	<select
-		class="inlin px-1 bg-inherit focus:outline-none text-white text-right invalid:text-gray-500"
+		class="inline px-1 bg-inherit focus:outline-none text-white text-right invalid:text-gray-500"
 		bind:value={store}
 		required
 	>
 		{#if !prop.schema.default}
-			<option value={''} disabled selected>select</option>
+			<option value="" disabled selected>select</option>
 		{/if}
 		{#each prop.schema.enum as item}
 			<option value={item}>{item}</option>
@@ -27,6 +26,7 @@
 		{placeholder}
 		bind:value={store}
 		type="text"
+		required={prop.is_required}
 	/>
 {:else if prop.schema.type == 'number'}
 	<input
@@ -34,6 +34,7 @@
 		{placeholder}
 		bind:value={store}
 		type="number"
+		required={prop.is_required}
 	/>
 {:else if prop.schema.type == 'integer'}
 	<input
@@ -41,11 +42,12 @@
 		{placeholder}
 		bind:value={store}
 		type="number"
+		required={prop.is_required}
 	/>
 {:else if prop.schema.type == 'boolean'}
 	<input
 		type="checkbox"
-		class="inline-block align-middle focus:outline-none toggle toggle-sm"
+		class="inline-block align-middle focus:outline-none toggle toggle-sm border-primary checked:bg-success"
 		bind:value={store}
 	/>
 {:else}

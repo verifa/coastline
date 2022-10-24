@@ -2,9 +2,9 @@
 	import { createEventDispatcher } from 'svelte';
 	import type { SchemaObject } from 'openapi-typescript';
 	import { getInitialPropValue, propFromSchema, type Property } from './spec';
-	import InputField from './fieldInput.svelte';
-	import SchemaObjectForm from './schemaObjectForm.svelte';
-	import FieldProperty from './fieldProperty.svelte';
+	import InputField from './RequestFieldInput.svelte';
+	import RequestObjectForm from './RequestObjectForm.svelte';
+	import FieldKey from './RequestFieldKey.svelte';
 
 	export let store: any;
 	export let parent: SchemaObject;
@@ -23,11 +23,11 @@
 </script>
 
 {#if prop.schema.type == 'object'}
-	<pre><code><FieldProperty bind:store {prop} {depth} /></code></pre>
-	<SchemaObjectForm bind:store schemaObj={prop.schema} depth={depth + 1} />
+	<pre><code><FieldKey bind:store {prop} {depth} /></code></pre>
+	<RequestObjectForm bind:store schemaObj={prop.schema} depth={depth + 1} />
 {:else if prop.schema.type == 'array'}
 	<pre><code
-			><FieldProperty bind:store {prop} {depth} /> {#if isArrayElement}<span
+			><FieldKey bind:store {prop} {depth} /> {#if isArrayElement}<span
 					class="text-error hover:cursor-pointer"
 					on:click={handleDelete}>x</span
 				>{/if}</code
@@ -53,8 +53,6 @@
 			></code
 		></pre>
 {:else}
-	<pre><code
-			><FieldProperty bind:store {prop} {depth}><InputField bind:store {prop} /></FieldProperty
-			></code
+	<pre><code><FieldKey bind:store {prop} {depth}><InputField bind:store {prop} /></FieldKey></code
 		></pre>
 {/if}

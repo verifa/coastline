@@ -16,9 +16,12 @@
 </script>
 
 <div class="navbar bg-primary text-primary-content">
-	<div class="navbar-start">
+	<div class="navbar-start space-x-16">
 		<a href={base} class="btn btn-ghost normal-case text-xl">Coastline</a>
+		<a href="{base}/requests" class="btn btn-ghost normal-case">Requests</a>
 	</div>
+
+	<div class="navbar-center" />
 
 	<div class="navbar-end">
 		{#if $session.initialized && $session.authenticated}

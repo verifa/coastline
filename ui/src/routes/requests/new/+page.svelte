@@ -9,7 +9,7 @@
 	import { writable } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
-	import SchemaObjectForm from './schemaObjectForm.svelte';
+	import RequestObjectForm from '$lib/request/RequestObjectForm.svelte';
 
 	type ProjectsResp = components['schemas']['ProjectsResp'];
 	type ServicesResp = components['schemas']['ServicesResp'];
@@ -133,7 +133,7 @@
 				<h2>Spec</h2>
 
 				<div class="mockup-code not-prose relative">
-					<SchemaObjectForm
+					<RequestObjectForm
 						bind:store={$requestStore.spec}
 						depth={0}
 						schemaObj={selectedSpec.spec}

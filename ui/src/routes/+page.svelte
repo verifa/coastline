@@ -59,7 +59,17 @@
 	{#if $requestStore.data.requests.length === 0}
 		<h2>No requests...</h2>
 	{:else}
-		<h2>Requests list</h2>
+		<h2>Requests</h2>
+		<div class="stats shadow">
+			<div class="stat">
+				<div class="stat-title">Total Requests</div>
+				<div class="stat-value">{$requestStore.data.requests.length}</div>
+				<div class="stat-desc">
+					{$requestStore.data.requests.filter((req) => req.status !== 'approved').length} open
+				</div>
+			</div>
+		</div>
+
 		<ul>
 			{#each $requestStore.data.requests as request}
 				<li>{request.type} in {request.project?.name}</li>

@@ -6,6 +6,7 @@ import (
 
 	"github.com/verifa/coastline/ent"
 	"github.com/verifa/coastline/ent/hook"
+	"github.com/verifa/coastline/server/oapi"
 
 	_ "github.com/xiaoqidun/entps"
 )
@@ -68,16 +69,52 @@ func (s *Store) RegisterHooks() {
 func (s *Store) init() error {
 	// TODO: this is really hacky as it doesn't check if the data already exists
 	// so if using persistent data it will fail...
-	{
-		_, err := s.client.Project.Create().SetName("dummy-project").Save(s.ctx)
-		if err != nil {
-			return fmt.Errorf("creating project: %w", err)
-		}
+	project, err := s.CreateProject(&oapi.NewProject{
+		Name: "dummy-project",
+	})
+	if err != nil {
+		return fmt.Errorf("creating project: %w", err)
+	}
+	service, err := s.CreateService(&oapi.NewService{
+		Name: "dummy-service",
+	})
+	if err != nil {
+		return fmt.Errorf("creating service: %w", err)
 	}
 	{
-		_, err := s.client.Service.Create().SetName("dummy-service").Save(s.ctx)
-		if err != nil {
-			return fmt.Errorf("creating service: %w", err)
+		requests := []*oapi.NewRequest{
+			{
+				ProjectId:   project.Id,
+				ServiceId:   service.Id,
+				RequestedBy: "dummy-user",
+				Type:        "JenkinsServerRequest",
+				Spec: map[string]interface{}{
+					"name": "server-1",
+				},
+			},
+			{
+				ProjectId:   project.Id,
+				ServiceId:   service.Id,
+				RequestedBy: "dummy-user",
+				Type:        "JenkinsServerRequest",
+				Spec: map[string]interface{}{
+					"name": "server-2",
+				},
+			},
+			{
+				ProjectId:   project.Id,
+				ServiceId:   service.Id,
+				RequestedBy: "dummy-user",
+				Type:        "JenkinsServerRequest",
+				Spec: map[string]interface{}{
+					"name": "server-3",
+				},
+			},
+		}
+		for i, req := range requests {
+			if _, err := s.CreateRequest(req); err != nil {
+				return fmt.Errorf("creating request %d: %w", i, err)
+			}
 		}
 	}
 

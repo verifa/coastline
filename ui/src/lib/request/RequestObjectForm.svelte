@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { SchemaObject } from 'openapi-typescript';
 	import { getInitialPropValue, propFromSchema, type Property } from './spec';
-	import SchemaPropertyForm from './schemaPropertyForm.svelte';
+	import RequestPropertyForm from './RequestPropertyForm.svelte';
 
 	export let store: { [key: string]: any } = {};
 	export let schemaObj: SchemaObject;
@@ -27,5 +27,5 @@
 </script>
 
 {#each properties as prop}
-	<SchemaPropertyForm bind:store={store[prop.name]} parent={schemaObj} {prop} {depth} />
+	<RequestPropertyForm bind:store={store[prop.name]} parent={schemaObj} {prop} {depth} />
 {/each}

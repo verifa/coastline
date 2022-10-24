@@ -9,7 +9,7 @@
 	import { page } from '$app/stores';
 
 	import { base } from '$app/paths';
-	import NavBar from './navBar.svelte';
+	import NavBar from './NavBar.svelte';
 
 	const authStore = createHttpStore<UserInfo>();
 
