@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { components } from '$lib/oapi/spec';
+	import type { components } from '$lib/oapi/gen/types';
 	import { createHttpStore } from '$lib/http/store';
 	import { session } from '$lib/session/store';
 	import { base } from '$app/paths';

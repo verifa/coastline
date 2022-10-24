@@ -6,3 +6,6 @@ node_modules
 .env
 .env.*
 !.env.example
+
+# Generated files
+src/lib/oapi/gen

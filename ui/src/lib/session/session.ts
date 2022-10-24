@@ -1,4 +1,4 @@
-import type { components } from "$lib/oapi/spec"
+import type { components } from "$lib/oapi/gen/types"
 
 export type UserInfo = components["schemas"]["UserInfo"]
 

@@ -3,6 +3,9 @@
 # Generated files
 server/oapi
 
+# Goreleaser dist folder
+dist/
+
 # Exclude binaries
 coastline
 build/

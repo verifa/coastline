@@ -1,8 +1,7 @@
 .PHONY: fe-install
 fe-install:
 	cd ui && \
-	npm install && \
-	npx openapi-typescript ../server/spec.yaml --output src/lib/oapi/spec.ts
+	npm install
 
 .PHONY: fe-dev
 fe-dev:
@@ -21,8 +20,6 @@ be-dev:
 .PHONY: be-gen
 be-gen:
 	go generate ./...
-	# Generate OpenAPI specification
-	npx redoc-cli build -o server/oapi/index.html server/spec.yaml
 
 .PHONY: be-build
 be-build: be-gen

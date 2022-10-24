@@ -11,7 +11,7 @@ export function getRequestSpecs(spec: OpenAPI3): RequestSpec[] {
     if (!schemas) {
         return []
     }
-    let requestSpecs: RequestSpec[] = []
+    const requestSpecs: RequestSpec[] = []
     for (const name in schemas) {
         const def = schemas[name]
 
@@ -37,7 +37,3 @@ export function getRequestSpecs(spec: OpenAPI3): RequestSpec[] {
     }
     return requestSpecs
 }
-
-// function isRef(obj: ReferenceObject | SchemaObject): boolean {
-//     return "$ref" in obj
-// }

@@ -1,0 +1,66 @@
+project_name: coastline
+before:
+  hooks:
+    - go generate ./...
+    - go mod tidy
+builds:
+  - flags:
+      # Include the UI and OpenAPI specification in the build
+      - -tags=ui,oapi
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - arm64
+      - amd64
+    ignore:
+      # Some packages (e.g. zerolog, sqlite) don't have this combo
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - "-s -w"
+      - "-X github.com/verifa/coastline/cmd.version={{.Version}}"
+      - "-X github.com/verifa/coastline/cmd.commit={{.Commit}}"
+      - "-X github.com/verifa/coastline/cmd.date={{.Date}}"
+checksum:
+  name_template: "checksums.txt"
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  sort: asc
+
+brews:
+  - name: coastline
+    tap:
+      owner: verifa
+      name: homebrew-tap
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    folder: Formula
+    homepage: "https://github.com/verifa/coastline"
+    description: "Terraplate"
+    test: |
+      system "#{bin}/coastline version"
+
+dockers:
+  - goos: linux
+    goarch: amd64
+    skip_push: "false"
+    use: buildx
+    dockerfile: Dockerfile.goreleaser
+    image_templates:
+      - "verifa/{{ .ProjectName }}:latest"
+      - "verifa/{{ .ProjectName }}:{{ .Tag }}"
+      - "verifa/{{ .ProjectName }}:{{ .Major }}"
+      - "verifa/{{ .ProjectName }}:{{ .Major }}.{{ .Minor }}"
+      - "verifa/{{ .ProjectName }}:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+    build_flag_templates:
+      - "--pull"
+
+release:
+  github:
+    owner: verifa
+    name: coastline
+  prerelease: auto
+  disable: false
+  draft: false
