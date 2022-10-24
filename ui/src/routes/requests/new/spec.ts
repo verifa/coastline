@@ -2,6 +2,7 @@ import type { SchemaObject } from "openapi-typescript";
 
 export interface Property {
     name: string;
+    description?: string;
     schema: SchemaObject;
     is_required: boolean;
 };
@@ -9,6 +10,7 @@ export interface Property {
 export function propFromSchema(name: string, parentObj: SchemaObject, obj: SchemaObject): Property {
     return {
         name: name,
+        description: obj.description,
         schema: obj,
         is_required: (parentObj.required || []).includes(name)
     }

@@ -1,10 +1,13 @@
 <script lang="ts">
 	import type { SchemaObject } from 'openapi-typescript';
 	import { getInitialPropValue, propFromSchema, type Property } from './spec';
-	import FieldForm from './fieldForm.svelte';
+	import SchemaPropertyForm from './schemaPropertyForm.svelte';
 
-	export let store: { [key: string]: any };
+	export let store: { [key: string]: any } = {};
 	export let schemaObj: SchemaObject;
+	export let depth: number = 0;
+
+	const indent: string = '  '.repeat(depth);
 
 	function getProperties(obj: SchemaObject): Property[] {
 		let properties: Property[] = [];
@@ -23,8 +26,6 @@
 	$: properties = getProperties(schemaObj);
 </script>
 
-<div class="ml-4 flex flex-col space-y-4">
-	{#each properties as prop}
-		<FieldForm bind:store={store[prop.name]} {prop} />
-	{/each}
-</div>
+{#each properties as prop}
+	<SchemaPropertyForm bind:store={store[prop.name]} parent={schemaObj} {prop} {depth} />
+{/each}

@@ -5,11 +5,11 @@
 
 	import type { OpenAPI3 } from 'openapi-typescript';
 	import type { components } from '$lib/oapi/gen/types';
-	import ObjectForm from './objectForm.svelte';
 	import { session } from '$lib/session/store';
 	import { writable } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
+	import SchemaObjectForm from './schemaObjectForm.svelte';
 
 	type ProjectsResp = components['schemas']['ProjectsResp'];
 	type ServicesResp = components['schemas']['ServicesResp'];
@@ -25,6 +25,7 @@
 		project_id: '',
 		service_id: '',
 		type: '',
+		status: 'pending_approval',
 		requested_by: '',
 		spec: {}
 	});
@@ -43,6 +44,8 @@
 	requestsSpecStore.subscribe((value) => {
 		if (value.ok && value.data) {
 			specs = getRequestSpecs(value.data);
+			// For dev, this line is useful to avoid selecting an option each time
+			// selectedSpec = specs[3];
 		}
 	});
 
@@ -125,8 +128,18 @@
 			<!-- TODO: when this changes we need to reset the store... -->
 
 			{#if selectedSpec}
+				<!-- Uncomment this to inspect the OpenAPI JSON -->
+				<!-- {JSON.stringify(selectedSpec.spec)} -->
 				<h2>Spec</h2>
-				<ObjectForm bind:store={$requestStore.spec} schemaObj={selectedSpec.spec} />
+
+				<div class="mockup-code not-prose relative">
+					<SchemaObjectForm
+						bind:store={$requestStore.spec}
+						depth={0}
+						schemaObj={selectedSpec.spec}
+					/>
+				</div>
+				<!-- <ObjectForm bind:store={$requestStore.spec} schemaObj={selectedSpec.spec} /> -->
 				<div>
 					<button class="btn btn-primary">Submit</button>
 				</div>
