@@ -1,31 +1,41 @@
 package server
 
 import (
-	"bytes"
-	"encoding/json"
 	"testing"
 
-	"cuelang.org/go/encoding/openapi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/verifa/coastline/server/oapi"
 )
 
-func TestRequestsEngine(t *testing.T) {
+func TestTemplatesForService(t *testing.T) {
 	e, err := NewRequestsEngine(&RequestsEngineConfig{
-		Module:     "github.com/verifa/coastline/examples/basic",
-		ModuleRoot: "../examples/basic",
+		Dir:       "..",
+		Templates: "./examples/basic",
 	})
 	require.NoError(t, err)
 
-	{
-		b, err := openapi.Gen(e.instance, nil)
-		require.NoError(t, err)
+	reqs := e.RequestTemplatesForService(&oapi.Service{
+		Labels: &oapi.Service_Labels{
+			AdditionalProperties: map[string]string{
+				"tool": "artifactory",
+			},
+		},
+	})
+	require.NoError(t, err)
+	assert.Len(t, reqs, 1)
 
-		var out bytes.Buffer
-		err = json.Indent(&out, b, "", "   ")
-		require.NoError(t, err)
-	}
+	b, err := e.OpenAPISpec("ArtifactoryRepoRequest")
+	require.NoError(t, err)
+	t.Log("spec: ", string(b))
+}
+
+func TestRequestsEngine(t *testing.T) {
+	e, err := NewRequestsEngine(&RequestsEngineConfig{
+		Dir:       "..",
+		Templates: "./examples/basic",
+	})
+	require.NoError(t, err)
 
 	tests := []struct {
 		req       oapi.NewRequest

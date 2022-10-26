@@ -1,3 +1,3 @@
 package schema
 
-type Labels map[string]interface{}
+type Labels map[string]string

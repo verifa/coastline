@@ -43,3 +43,25 @@ func (s *ServerImpl) GetServiceByID(w http.ResponseWriter, r *http.Request, id u
 	}
 	returnJSON(w, resp.Services[0])
 }
+
+func (s *ServerImpl) GetRequestTemplatesForService(w http.ResponseWriter, r *http.Request, id uuid.UUID) {
+	services, err := s.store.QueryServices(service.ID(uuid.UUID(id)))
+	if err != nil {
+		http.Error(w, "Quering services: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if len(services.Services) == 0 {
+		http.Error(w, "Service not found", http.StatusNotFound)
+		return
+	}
+	reqTemplates := s.engine.RequestTemplatesForService(&services.Services[0])
+	resp := oapi.RequestTemplatesResp{
+		Templates: make([]oapi.RequestTemplate, len(reqTemplates)),
+	}
+	for i, req := range reqTemplates {
+		resp.Templates[i] = oapi.RequestTemplate{
+			Type: req.Type,
+		}
+	}
+	returnJSON(w, resp)
+}

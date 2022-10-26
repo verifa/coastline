@@ -1,7 +1,5 @@
 package basic
 
-#Request: #ArtifactoryRepoRequest | #JenkinsServerRequest
-
 #metadata: {
 	name:      string
 	namespace: string
@@ -47,8 +45,14 @@ package basic
 }
 
 #ArtifactoryRepoRequest: {
-	type:    "ArtifactoryRepoRequest"
-	service: "artifactory"
+	type: "ArtifactoryRepoRequest"
+	service: {
+		selector: {
+			matchLabels: {
+				tool: "artifactory"
+			}
+		}
+	}
 	spec: {
 		// Name of the repository to create
 		repo: string

@@ -3,22 +3,26 @@
 	import { getRequestSpecs } from '$lib/oapi/parse';
 	import type { RequestSpec } from '$lib/oapi/parse';
 
-	import type { OpenAPI3 } from 'openapi-typescript';
+	import type { SchemaObject, OpenAPI3 } from 'openapi-typescript';
 	import type { components } from '$lib/oapi/gen/types';
 	import { session } from '$lib/session/store';
 	import { writable } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
 	import RequestObjectForm from '$lib/request/RequestObjectForm.svelte';
+	import Loading from '$lib/Loading.svelte';
+	import { dataset_dev } from 'svelte/internal';
 
 	type ProjectsResp = components['schemas']['ProjectsResp'];
 	type ServicesResp = components['schemas']['ServicesResp'];
+	type RequestTemplatesResp = components['schemas']['RequestTemplatesResp'];
 	type NewRequest = components['schemas']['NewRequest'];
 	type Request = components['schemas']['Request'];
 
 	const projectStore = createHttpStore<ProjectsResp>();
 	const serviceStore = createHttpStore<ServicesResp>();
-	const requestsSpecStore = createHttpStore<OpenAPI3>();
+	const requestTemplatesStore = createHttpStore<RequestTemplatesResp>();
+	const templateSpecStore = createHttpStore<OpenAPI3>();
 	const requestsSubmitStore = createHttpStore<Request>();
 
 	const requestStore = writable<NewRequest>({
@@ -29,24 +33,11 @@
 		requested_by: '',
 		spec: {}
 	});
+	projectStore.get('/projects');
 
+	// TODO: remove this, but it's useful for debugging at the moment
 	requestStore.subscribe((value) => {
 		console.log(value);
-	});
-
-	projectStore.get('/projects');
-	serviceStore.get('/services');
-	requestsSpecStore.get('/requestsspec');
-
-	let specs: RequestSpec[];
-	let selectedSpec: RequestSpec;
-
-	requestsSpecStore.subscribe((value) => {
-		if (value.ok && value.data) {
-			specs = getRequestSpecs(value.data);
-			// For dev, this line is useful to avoid selecting an option each time
-			// selectedSpec = specs[3];
-		}
 	});
 
 	requestsSubmitStore.subscribe((value) => {
@@ -58,8 +49,28 @@
 		}
 	});
 
+	function getSchemaObjFromOpenAPI(spec: OpenAPI3): SchemaObject {
+		if (spec.components) {
+			for (const key in spec.components.schemas) {
+				return spec.components.schemas[key];
+			}
+		}
+		return undefined;
+	}
+
+	function handleProjectChange() {
+		serviceStore.get('/services');
+	}
+
+	function handleServiceChange() {
+		requestTemplatesStore.get(`/services/${$requestStore.service_id}/templates`);
+	}
+
+	function handleRequestTemplateChange() {
+		templateSpecStore.get(`/templates/${$requestStore.type}/openapi`);
+	}
+
 	function handleSubmit() {
-		$requestStore.type = selectedSpec.type;
 		$requestStore.requested_by = $session.user?.name || 'anonymous';
 		requestsSubmitStore.post('/requests', {}, $requestStore);
 	}
@@ -80,6 +91,7 @@
 					id="project"
 					class="select select-bordered"
 					bind:value={$requestStore.project_id}
+					on:change={handleProjectChange}
 					required
 				>
 					<option disabled selected value={''}>Select project</option>
@@ -101,6 +113,7 @@
 					id="service"
 					class="select select-bordered"
 					bind:value={$requestStore.service_id}
+					on:change={handleServiceChange}
 					required
 				>
 					<option disabled selected value={''}>Select service</option>
@@ -111,35 +124,42 @@
 			</div>
 		{/if}
 
-		{#if $requestsSpecStore.fetching}
+		{#if $requestTemplatesStore.fetching}
 			<h2>Loading</h2>
-		{:else if $requestsSpecStore.ok}
+		{:else if $requestTemplatesStore.ok && $requestTemplatesStore.data}
 			<div class="form-control w-full max-w-xs">
 				<label for="request" class="label">
 					<span class="label-text">Request</span>
 				</label>
-				<select id="request" class="select select-bordered" bind:value={selectedSpec}>
+				<select
+					id="request"
+					class="select select-bordered"
+					bind:value={$requestStore.type}
+					on:change={handleRequestTemplateChange}
+				>
 					<option disabled selected value={undefined}>Select request</option>
-					{#each specs as spec}
-						<option value={spec}>{spec.type}</option>
+					{#each $requestTemplatesStore.data.templates as template}
+						<option value={template.type}>{template.type}</option>
 					{/each}
 				</select>
 			</div>
 			<!-- TODO: when this changes we need to reset the store... -->
 
-			{#if selectedSpec}
+			{#if $templateSpecStore.fetching}
+				<Loading />
+			{:else if $templateSpecStore.ok && $templateSpecStore.data}
 				<!-- Uncomment this to inspect the OpenAPI JSON -->
-				<!-- {JSON.stringify(selectedSpec.spec)} -->
+				<!-- {JSON.stringify(selectedTemplate.spec)} -->
 				<h2>Spec</h2>
 
 				<div class="mockup-code not-prose relative">
 					<RequestObjectForm
 						bind:store={$requestStore.spec}
 						depth={0}
-						schemaObj={selectedSpec.spec}
+						schemaObj={getSchemaObjFromOpenAPI($templateSpecStore.data)}
 					/>
 				</div>
-				<!-- <ObjectForm bind:store={$requestStore.spec} schemaObj={selectedSpec.spec} /> -->
+				<!-- <ObjectForm bind:store={$requestStore.spec} schemaObj={selectedTemplate.spec} /> -->
 				<div>
 					<button class="btn btn-primary">Submit</button>
 				</div>

@@ -27,6 +27,7 @@ import (
 )
 
 var serverConfig = server.DefaultConfig()
+var storeConfig store.Config
 
 // serverCmd represents the server command
 var serverCmd = &cobra.Command{
@@ -40,7 +41,10 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.TODO()
-		store, err := store.New(ctx)
+		if serverConfig.DevMode {
+			storeConfig.InitData = true
+		}
+		store, err := store.New(ctx, &storeConfig)
 		if err != nil {
 			return fmt.Errorf("creating store: %w", err)
 		}
@@ -58,14 +62,6 @@ func init() {
 	rootCmd.AddCommand(serverCmd)
 
 	serverCmd.Flags().BoolVarP(&serverConfig.DevMode, "dev", "d", false, "Enable dev mode")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// serverCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// serverCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	serverCmd.Flags().StringVarP(&serverConfig.RequestsEngine.Templates, "templates", "t", "", "Path to request templates to load")
+	serverCmd.Flags().StringVarP(&serverConfig.Dir, "directory", "C", ".", "Base directory to run command from")
 }

@@ -21,19 +21,22 @@ import (
 
 type Config struct {
 	DevMode        bool
+	Dir            string
 	RedirectURI    string
 	RequestsEngine RequestsEngineConfig
 }
 
 func DefaultConfig() Config {
 	return Config{
-		RequestsEngine: DefaultRequestsEngineConfig(),
-		RedirectURI:    defaultEnv("CL_SERVER_REDIRECT_URI", "/ui"),
+		RedirectURI: defaultEnv("CL_SERVER_REDIRECT_URI", "/ui"),
 	}
 }
 
 func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, error) {
 
+	if store == nil {
+		return nil, fmt.Errorf("store is required")
+	}
 	if config == nil {
 		return nil, fmt.Errorf("config is required")
 	}
@@ -97,6 +100,7 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 			r.Get("/services", wrapper.GetServices)
 			r.Post("/services", wrapper.CreateService)
 			r.Post("/services/{id}", wrapper.GetServiceByID)
+			r.Get("/services/{id}/templates", wrapper.GetRequestTemplatesForService)
 			//
 			// Requests
 			//
@@ -104,7 +108,7 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 			r.Post("/requests", wrapper.CreateRequest)
 			r.Get("/requests/{id}", wrapper.GetRequestByID)
 			r.Post("/requests/{id}/review", wrapper.ReviewRequest)
-			r.Get("/requestsspec", wrapper.GetRequestsSpec)
+			r.Get("/templates/{id}/openapi", wrapper.GetRequestTemplateSpec)
 			//
 			// UserInfo
 			//

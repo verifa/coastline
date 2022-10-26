@@ -18,6 +18,7 @@ func (Service) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New),
 		field.String("name").NotEmpty().Unique(),
+		field.JSON("labels", Labels{}).Optional().Default(Labels{}),
 	}
 }
 

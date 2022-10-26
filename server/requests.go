@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -50,7 +51,10 @@ func (s *ServerImpl) GetRequestByID(w http.ResponseWriter, r *http.Request, id u
 	returnJSON(w, resp.Requests[0])
 }
 
-func (s *ServerImpl) GetRequestsSpec(w http.ResponseWriter, r *http.Request) {
-	spec := s.engine.OpenAPISpec()
+func (s *ServerImpl) GetRequestTemplateSpec(w http.ResponseWriter, r *http.Request, id string) {
+	spec, err := s.engine.OpenAPISpec(id)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Generating OpenAPI specification for %s: %s", id, err.Error()), http.StatusBadRequest)
+	}
 	returnBytesAsJSON(w, spec)
 }

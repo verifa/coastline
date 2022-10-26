@@ -15,7 +15,7 @@ fe-build:
 
 .PHONY: be-dev
 be-dev:
-	go run main.go server --dev
+	go run main.go server --dev --templates ./examples/basic
 
 .PHONY: be-gen
 be-gen:

@@ -11,7 +11,16 @@ import (
 	_ "github.com/xiaoqidun/entps"
 )
 
-func New(ctx context.Context) (*Store, error) {
+type Config struct {
+	// InitData specifies whether to load the database with dummy data or not.
+	// It is intended for demoing purposes and should be ignored in production
+	InitData bool
+}
+
+func New(ctx context.Context, config *Config) (*Store, error) {
+	if config == nil {
+		return nil, fmt.Errorf("config is required")
+	}
 	client, err := ent.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	if err != nil {
 		return nil, fmt.Errorf("opening database connection: %w", err)
@@ -29,8 +38,10 @@ func New(ctx context.Context) (*Store, error) {
 	// Setup hooks
 	s.RegisterHooks()
 
-	if err := s.init(); err != nil {
-		return nil, fmt.Errorf("initializing database: %w", err)
+	if config.InitData {
+		if err := s.init(); err != nil {
+			return nil, fmt.Errorf("initializing database: %w", err)
+		}
 	}
 
 	return &s, nil
@@ -77,6 +88,11 @@ func (s *Store) init() error {
 	}
 	service, err := s.CreateService(&oapi.NewService{
 		Name: "dummy-service",
+		Labels: &oapi.NewService_Labels{
+			AdditionalProperties: map[string]string{
+				"tool": "artifactory",
+			},
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("creating service: %w", err)

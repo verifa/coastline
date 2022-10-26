@@ -4,7 +4,6 @@
 	import { createHttpStore } from '$lib/http/store';
 	import Loading from '$lib/Loading.svelte';
 	import type { components } from '$lib/oapi/gen/types';
-	import RequestObjectForm from '$lib/request/RequestObjectForm.svelte';
 	import StatusBadge from '$lib/request/StatusBadge.svelte';
 
 	type Request = components['schemas']['Request'];
@@ -12,13 +11,12 @@
 
 	const requestStore = createHttpStore<Request>();
 	const reviewStore = createHttpStore<Request>();
-	requestStore.get(`/requests/${$page.params.id}`);
 
+	requestStore.get(`/requests/${$page.params.id}`);
 	requestStore.subscribe((value) => {
 		if (!value.requested || value.fetching) {
 			return;
-		}
-		if (!value.ok) {
+		} else if (!value.ok) {
 			console.log('something wrong');
 		}
 	});
@@ -97,7 +95,14 @@
 
 	<h2>Spec</h2>
 	<div class="mockup-code">
-		<pre><code>// TODO: show spec here</code></pre>
+		<pre><code>// TODO: show spec here.</code></pre>
+		<pre><code
+				>// Do we want to render based on the OpenAPI spec for which the request was created?</code
+			></pre>
+		<pre><code
+				>// Or render based on the current (if it exists) OpenAPI spec for the request template?</code
+			></pre>
+		<pre><code>// The request template, if it exists, might have changed...</code></pre>
 	</div>
 	<!-- <RequestObjectForm schemaObj={$store.data.spec} /> -->
 {/if}
