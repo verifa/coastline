@@ -28,9 +28,9 @@ func (Request) Fields() []ent.Field {
 
 func (Request) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("Project", Project.Type).Required().Unique(),
-		edge.To("Service", Service.Type).Required().Unique(),
-		edge.From("Reviews", Review.Type).Ref("Request"),
+		edge.To("project", Project.Type).Required().Unique(),
+		edge.To("service", Service.Type).Required().Unique(),
+		edge.From("reviews", Review.Type).Ref("request"),
 	}
 }
 
@@ -42,7 +42,7 @@ func (Request) Indexes() []ent.Index {
 }
 
 func (Request) Mixin() []ent.Mixin {
-    return []ent.Mixin{
-        mixin.Time{},
-    }
+	return []ent.Mixin{
+		mixin.Time{},
+	}
 }

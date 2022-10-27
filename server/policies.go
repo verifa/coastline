@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/open-policy-agent/opa/rego"
+	"github.com/verifa/coastline/server/oapi"
 )
 
 type PolicyType string
@@ -34,7 +35,7 @@ func NewPolicyEngine() *PolicyEngine {
 	}
 }
 
-func (pe PolicyEngine) EvaluateLoginRequest(userInfo UserInfo) (bool, error) {
+func (pe PolicyEngine) EvaluateLoginRequest(userInfo oapi.UserInfo) (bool, error) {
 
 	policies := pe.Policies[LoginPolicyType]
 

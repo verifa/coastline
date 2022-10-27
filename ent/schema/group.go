@@ -9,32 +9,35 @@ import (
 	"github.com/google/uuid"
 )
 
-type Project struct {
+type Group struct {
 	ent.Schema
 }
 
-func (Project) Fields() []ent.Field {
+func (Group) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).
-			Default(uuid.New),
+			Default(uuid.New).Unique(),
 		field.String("name").NotEmpty().Unique(),
+		field.Bool("is_external").
+			Default(false).
+			Comment("Whether the group was created via Coastline or external identity provider as part of login"),
 	}
 }
 
-func (Project) Edges() []ent.Edge {
+func (Group) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("requests", Request.Type).Ref("project"),
+		edge.From("users", User.Type).Ref("groups"),
 	}
 }
 
-func (Project) Indexes() []ent.Index {
+func (Group) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("id").
 			Unique(),
 	}
 }
 
-func (Project) Mixin() []ent.Mixin {
+func (Group) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		mixin.Time{},
 	}

@@ -1,103 +1,52 @@
 package server
 
 import (
-	"errors"
 	"net/http"
 	"time"
 
-	"github.com/coreos/go-oidc"
 	"github.com/google/uuid"
+	"github.com/verifa/coastline/server/oapi"
 )
 
-type Sessioner struct {
-	cookieName string
-	sessions   map[string]*Session
-}
+const cookieName = "coastline_session"
 
-type Session struct {
-	ID      uuid.UUID
-	IDToken *oidc.IDToken
-
-	UserInfo UserInfo
-}
-
-type UserInfo struct {
-	Name   string   `json:"name"`
-	Email  string   `json:"email"`
-	Groups []string `json:"groups"`
-}
-
-type UserClaims struct {
-	UserID string   `json:"sub"`
-	Email  string   `json:"email"`
-	Name   string   `json:"name"`
-	Groups []string `json:"groups"`
-}
-
-func newSessioner() *Sessioner {
-	return &Sessioner{
-		sessions:   make(map[string]*Session),
-		cookieName: "project_session",
+func getSessionCookie(r *http.Request) (uuid.UUID, error) {
+	sessionCookie, err := r.Cookie(cookieName)
+	if err != nil {
+		return uuid.UUID{}, err
 	}
+	return uuid.Parse(sessionCookie.Value)
 }
 
-func (s *Sessioner) NewSession(w http.ResponseWriter, claims *UserClaims) {
-
-	sessionID := uuid.New()
-	session := Session{
-		ID: sessionID,
-		// IDToken: idToken,
-	}
-
-	session.UserInfo = UserInfo{
-		Name:   claims.Name,
-		Email:  claims.Email,
-		Groups: claims.Groups,
-	}
-	s.sessions[sessionID.String()] = &session
+func writeSessionCookieHeader(w http.ResponseWriter, sessionID uuid.UUID) {
+	// Create cookie
 	http.SetCookie(w, &http.Cookie{
-		Name:     s.cookieName,
+		Name:     cookieName,
 		Value:    sessionID.String(),
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		MaxAge:   int(time.Hour.Seconds()),
+		MaxAge:   int(time.Hour.Seconds() * 8),
 		Path:     "/",
 	})
 }
 
-func (s *Sessioner) EndSession(r *http.Request) error {
-	session, err := s.AuthorizeSession(r)
+func (s *ServerImpl) GetUsers(w http.ResponseWriter, r *http.Request) {
+	// TODO: move this to store
+	dbUsers, err := s.store.Client().User.Query().All(s.auth.ctx)
 	if err != nil {
-		return err
+		http.Error(w, "Getting users: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
-	delete(s.sessions, session.ID.String())
 
-	return nil
+	resp := oapi.UsersResp{
+		Users: make([]oapi.UserInfo, len(dbUsers)),
+	}
+	for i, dbUser := range dbUsers {
+		resp.Users[i] = oapi.UserInfo{
+			Name:    dbUser.Name,
+			Email:   &dbUser.Email,
+			Picture: &dbUser.Picture,
+		}
+	}
+	returnJSON(w, resp)
 }
-
-func (s *Sessioner) AuthorizeSession(r *http.Request) (*Session, error) {
-	sessionCookie, err := r.Cookie(s.cookieName)
-	if err != nil {
-		return nil, err
-	}
-	session, ok := s.sessions[sessionCookie.Value]
-	if !ok {
-		return nil, errors.New("no session exists")
-	}
-	return session, nil
-}
-
-// func (s *Sessioner) Get(id string) (Session, bool) {
-// 	session, ok := s.sessions[id]
-// 	return session, ok
-// }
-
-// func newSession() (*session.Manager, error) {
-// 	mgr, err := session.NewManager("memory", session.Options{
-// 		CookieName: cookieName,
-// 	})
-// 	if err != nil {
-// 		return nil, fmt.Errorf("creating session manager: %w", err)
-// 	}
-// 	return mgr, nil
-// }

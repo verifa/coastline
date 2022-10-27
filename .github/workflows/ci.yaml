@@ -1,14 +1,14 @@
 name: ci
 on:
-  # run this workflow on any branch or a PR
+  # Run this workflow on pushes, tags or PRs on main
   push:
     branches:
-      - "**"
+      - main
     tags:
       - "**"
   pull_request:
     branches:
-      - "**"
+      - main
 
 jobs:
   ci:

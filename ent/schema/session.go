@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"time"
+
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -9,32 +11,33 @@ import (
 	"github.com/google/uuid"
 )
 
-type Project struct {
+type Session struct {
 	ent.Schema
 }
 
-func (Project) Fields() []ent.Field {
+func (Session) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New),
-		field.String("name").NotEmpty().Unique(),
+		// Default 8 hour sessions
+		field.Int64("duration").Default(int64(time.Hour * 8)),
 	}
 }
 
-func (Project) Edges() []ent.Edge {
+func (Session) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("requests", Request.Type).Ref("project"),
+		edge.To("user", User.Type).Required().Unique(),
 	}
 }
 
-func (Project) Indexes() []ent.Index {
+func (Session) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("id").
 			Unique(),
 	}
 }
 
-func (Project) Mixin() []ent.Mixin {
+func (Session) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		mixin.Time{},
 	}

@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,13 +20,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kelseyhightower/envconfig"
 	"github.com/verifa/coastline/server"
 	"github.com/verifa/coastline/store"
 
 	"github.com/spf13/cobra"
 )
 
-var serverConfig = server.DefaultConfig()
+var serverConfig server.Config
 var storeConfig store.Config
 
 // serverCmd represents the server command
@@ -59,9 +60,13 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
+	// Handle environment variable configs before parsing command line args
+	envErr := envconfig.Process("CL", &serverConfig)
+	cobra.CheckErr(envErr)
+
 	rootCmd.AddCommand(serverCmd)
 
-	serverCmd.Flags().BoolVarP(&serverConfig.DevMode, "dev", "d", false, "Enable dev mode")
-	serverCmd.Flags().StringVarP(&serverConfig.RequestsEngine.Templates, "templates", "t", "", "Path to request templates to load")
+	serverCmd.Flags().BoolVarP(&serverConfig.DevMode, "dev", "d", serverConfig.DevMode, "Enable dev mode")
+	serverCmd.Flags().StringVarP(&serverConfig.RequestsEngine.Templates, "templates", "t", serverConfig.RequestsEngine.Templates, "Path to request templates to load")
 	serverCmd.Flags().StringVarP(&serverConfig.Dir, "directory", "C", ".", "Base directory to run command from")
 }
