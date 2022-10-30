@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -11,68 +10,70 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/verifa/coastline/server/oapi"
+	"github.com/verifa/coastline/server/session"
+	"github.com/verifa/coastline/store"
 	"golang.org/x/oauth2"
 )
 
-var (
-	// clientID     = os.Getenv("GOOGLE_OAUTH2_CLIENT_ID")
-	// clientSecret = os.Getenv("GOOGLE_OAUTH2_CLIENT_SECRET")
-	clientID     = "web"
-	clientSecret = "secret"
-	issuer       = "http://localhost:9998"
-)
+type AuthConfig struct {
+	ClientID     string   `envconfig:"client_id"`
+	ClientSecret string   `envconfig:"client_secret"`
+	Issuer       string   `envconfig:"issuer"`
+	Scopes       []string `envconfig:"scopes"`
+	RedirectURI  string   `envconfig:"redirect_uri"`
+}
 
 // ContextKey is used to store the auth context value in the request context
 type ContextKey string
 
 var contextKey ContextKey = "AUTH_CONTEXT"
 
-func newAuthProvider(ctx context.Context, devMode bool, redirectURI string) (*authProvider, error) {
-	sessioner := newSessioner()
+func newAuthProvider(ctx context.Context, store *store.Store, config AuthConfig, devMode bool) (*authProvider, error) {
 	police := NewPolicyEngine()
 
 	if devMode {
 		return &authProvider{
 			ctx:         ctx,
-			sessioner:   sessioner,
+			store:       store,
 			police:      police,
 			devMode:     devMode,
-			redirectURI: redirectURI,
+			redirectURI: "/ui",
 		}, nil
 	}
-	provider, err := oidc.NewProvider(ctx, issuer)
+	provider, err := oidc.NewProvider(ctx, config.Issuer)
 	if err != nil {
 		return nil, fmt.Errorf("creating OIDC provider: %w", err)
 	}
 	oidcConfig := &oidc.Config{
-		ClientID: clientID,
+		ClientID: config.ClientID,
 	}
 	verifier := provider.Verifier(oidcConfig)
-	config := &oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
+	oauth2Config := &oauth2.Config{
+		ClientID:     config.ClientID,
+		ClientSecret: config.ClientSecret,
 		Endpoint:     provider.Endpoint(),
-		RedirectURL:  "http://localhost:3000/api/v1/auth/callback",
-		Scopes:       []string{oidc.ScopeOpenID, "openid", "profile", "preferred_username", "email", "groups"},
+		RedirectURL:  config.RedirectURI,
+		Scopes:       config.Scopes,
 	}
 
 	return &authProvider{
 		ctx:         ctx,
 		oidc:        provider,
 		verifier:    verifier,
-		config:      config,
-		sessioner:   sessioner,
+		config:      oauth2Config,
+		store:       store,
 		police:      police,
-		redirectURI: redirectURI,
+		redirectURI: "/ui",
 	}, nil
 }
 
 type authProvider struct {
-	ctx         context.Context
-	oidc        *oidc.Provider
-	verifier    *oidc.IDTokenVerifier
-	config      *oauth2.Config
-	sessioner   *Sessioner
+	ctx      context.Context
+	oidc     *oidc.Provider
+	verifier *oidc.IDTokenVerifier
+	config   *oauth2.Config
+	store    *store.Store
+	// sessioner   *Sessioner
 	police      *PolicyEngine
 	devMode     bool
 	redirectURI string
@@ -80,21 +81,16 @@ type authProvider struct {
 
 func (p authProvider) authenticateMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, err := p.sessioner.AuthorizeSession(r)
+		sessionID, err := getSessionCookie(r)
 		if err != nil {
-			http.Error(w, "no session: "+err.Error(), http.StatusUnauthorized)
+			http.Error(w, "getting session cookie: "+err.Error(), http.StatusUnauthorized)
+		}
+		claims, err := p.store.ValidateSession(sessionID)
+		if err != nil {
+			http.Error(w, "invalid session: "+err.Error(), http.StatusUnauthorized)
 			return
 		}
-		// allow, err := p.police.EvaluateLoginRequest(session.UserInfo)
-		// if err != nil {
-		// 	http.Error(w, "Error enforcing login policies: "+err.Error(), http.StatusInternalServerError)
-		// 	return
-		// }
-		// if !allow {
-		// 	http.Error(w, "Forbidden access", http.StatusForbidden)
-		// }
-
-		ctx := context.WithValue(r.Context(), contextKey, session)
+		ctx := context.WithValue(r.Context(), contextKey, claims)
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
@@ -104,58 +100,43 @@ func (p authProvider) authenticateMiddleware(next http.Handler) http.Handler {
 func (p authProvider) Routes() chi.Router {
 	r := chi.NewRouter()
 
-	r.Get("/authenticate", p.handleAuthenticate)
 	r.Get("/login", p.handleLogin)
 	r.Get("/logout", p.handleLogout)
-
 	r.Get("/auth/callback", p.handleAuthCallback)
 
 	return r
 }
 
 func (p authProvider) UserInfo(r *http.Request) (*oapi.UserInfo, error) {
-	session, err := p.sessioner.AuthorizeSession(r)
+	sessionID, err := getSessionCookie(r)
 	if err != nil {
-		return nil, fmt.Errorf("authorizing request: %w", err)
+		return nil, fmt.Errorf("getting session cookie: %w", err)
 	}
-	ui := session.UserInfo
-
+	claims, err := p.store.ValidateSession(sessionID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid session: %w", err)
+	}
 	return &oapi.UserInfo{
-		Name:  ui.Name,
-		Email: &ui.Email,
+		Name:    claims.Name,
+		Email:   &claims.Email,
+		Picture: &claims.Picture,
 	}, nil
-}
-
-func (p authProvider) handleAuthenticate(w http.ResponseWriter, r *http.Request) {
-	session, err := p.sessioner.AuthorizeSession(r)
-	if err != nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-	w.Header().Set("Content-Type", "text/json; charset=utf-8")
-	data := struct {
-		UserInfo UserInfo `json:"user"`
-	}{
-		UserInfo: session.UserInfo,
-	}
-	dataJSON, err := json.Marshal(data)
-	if err != nil {
-		http.Error(w, "Marshalling JSON", http.StatusInternalServerError)
-		return
-	}
-	w.Write(dataJSON)
 }
 
 func (p authProvider) handleLogin(w http.ResponseWriter, r *http.Request) {
 	state := uuid.New().String()
 	nonce := uuid.New().String()
 	if p.devMode {
-		p.sessioner.NewSession(w, &UserClaims{
-			UserID: "dev",
+		sessionID, err := p.store.NewSession("dev", &session.UserClaims{
+			Sub:    "dev",
 			Email:  "dev@localhost",
 			Name:   "dev",
-			Groups: []string{"dev"},
+			Groups: []string{"admin", "dev"},
 		})
+		if err != nil {
+			http.Error(w, "Creating new session: "+err.Error(), http.StatusInternalServerError)
+		}
+		writeSessionCookieHeader(w, sessionID)
 		http.Redirect(w, r, p.redirectURI, http.StatusSeeOther)
 		return
 	}
@@ -165,7 +146,12 @@ func (p authProvider) handleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p authProvider) handleLogout(w http.ResponseWriter, r *http.Request) {
-	if err := p.sessioner.EndSession(r); err != nil {
+	sessionID, err := getSessionCookie(r)
+	if err != nil {
+		http.Error(w, "Invalid session: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+	if err := p.store.EndSession(sessionID); err != nil {
 		http.Error(w, "Cannot logout: "+err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -197,7 +183,6 @@ func (p authProvider) handleAuthCallback(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "No id_token field in oauth2 token.", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("rawIDToken: ", rawIDToken)
 
 	idToken, err := p.verifier.Verify(p.ctx, rawIDToken)
 	if err != nil {
@@ -207,11 +192,11 @@ func (p authProvider) handleAuthCallback(w http.ResponseWriter, r *http.Request)
 
 	nonce, err := r.Cookie("nonce")
 	if err != nil {
-		http.Error(w, "nonce not found", http.StatusBadRequest)
+		http.Error(w, "Nonce not found", http.StatusBadRequest)
 		return
 	}
 	if idToken.Nonce != nonce.Value {
-		http.Error(w, "nonce did not match", http.StatusBadRequest)
+		http.Error(w, "Nonce did not match", http.StatusBadRequest)
 		return
 	}
 
@@ -221,13 +206,17 @@ func (p authProvider) handleAuthCallback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var claims UserClaims
+	var claims session.UserClaims
 	if err := userInfo.Claims(&claims); err != nil {
 		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
 		return
 	}
 
-	p.sessioner.NewSession(w, &claims)
+	sessionID, err := p.store.NewSession(p.config.ClientID, &claims)
+	if err != nil {
+		http.Error(w, "Creating new session: "+err.Error(), http.StatusInternalServerError)
+	}
+	writeSessionCookieHeader(w, sessionID)
 	http.Redirect(w, r, p.redirectURI, http.StatusSeeOther)
 }
 

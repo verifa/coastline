@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/verifa/coastline/ent"
 	"github.com/verifa/coastline/ent/hook"
@@ -15,11 +16,17 @@ type Config struct {
 	// InitData specifies whether to load the database with dummy data or not.
 	// It is intended for demoing purposes and should be ignored in production
 	InitData bool
+
+	SessionDuration time.Duration
 }
 
 func New(ctx context.Context, config *Config) (*Store, error) {
 	if config == nil {
 		return nil, fmt.Errorf("config is required")
+	}
+	if config.SessionDuration == 0 {
+		// Set default duration
+		config.SessionDuration = time.Hour * 2
 	}
 	client, err := ent.Open("sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 	if err != nil {
@@ -31,6 +38,7 @@ func New(ctx context.Context, config *Config) (*Store, error) {
 	}
 
 	s := Store{
+		config: config,
 		client: client,
 		ctx:    ctx,
 	}
@@ -48,6 +56,7 @@ func New(ctx context.Context, config *Config) (*Store, error) {
 }
 
 type Store struct {
+	config *Config
 	client *ent.Client
 	ctx    context.Context
 }

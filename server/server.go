@@ -20,16 +20,11 @@ import (
 )
 
 type Config struct {
-	DevMode        bool
-	Dir            string
-	RedirectURI    string
-	RequestsEngine RequestsEngineConfig
-}
-
-func DefaultConfig() Config {
-	return Config{
-		RedirectURI: defaultEnv("CL_SERVER_REDIRECT_URI", "/ui"),
-	}
+	DevMode        bool                 `envconfig:"dev"`
+	Dir            string               `envconfig:"-"`
+	RedirectURI    string               `envconfig:"-"`
+	Auth           AuthConfig           `envconfig:"auth"`
+	RequestsEngine RequestsEngineConfig `envconfig:"-"`
 }
 
 func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, error) {
@@ -45,7 +40,7 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 		return nil, fmt.Errorf("creating requests engine: %w", err)
 	}
 
-	authProvider, err := newAuthProvider(ctx, config.DevMode, config.RedirectURI)
+	authProvider, err := newAuthProvider(ctx, store, config.Auth, config.DevMode)
 	if err != nil {
 		return nil, fmt.Errorf("creating authentication provider: %w", err)
 	}
@@ -113,6 +108,10 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 			// UserInfo
 			//
 			r.Get("/userinfo", wrapper.GetUserInfo)
+			//
+			// Users
+			//
+			r.Get("/users", wrapper.GetUsers)
 		})
 
 		if oapiEnabled {
@@ -127,6 +126,13 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 			http.Redirect(w, r, "/ui", http.StatusFound)
 		})
 		r.Mount("/ui", handleUI())
+	} else {
+		// TODO: this is a bit hacky to work with dev
+		// If UI is not enabled, we are likely in dev mode so forward to the
+		// default port the frontend runs on in dev mode
+		r.Get("/ui", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "http://localhost:5173/ui", http.StatusFound)
+		})
 	}
 
 	return r, nil

@@ -24,7 +24,7 @@ func (Service) Fields() []ent.Field {
 
 func (Service) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("Requests", Request.Type).Ref("Service"),
+		edge.From("requests", Request.Type).Ref("service"),
 	}
 }
 

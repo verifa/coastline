@@ -386,6 +386,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /users:
+    get:
+      description: |
+        Get all users
+      operationId: getUsers
+      responses:
+        "200":
+          description: users response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsersResp"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   #   delete:
   #     description: deletes a single pet based on the ID supplied
   #     operationId: deletePet
@@ -614,6 +632,15 @@ components:
           type: string
         picture:
           type: string
+    UsersResp:
+      type: object
+      required:
+        - users
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserInfo"
     # TODO: remove this as we probably don't need it.
     # Responses already have a code/status (in header)
     # and the message is sent as plain text
