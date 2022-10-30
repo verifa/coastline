@@ -85,12 +85,12 @@ func (p authProvider) authenticateMiddleware(next http.Handler) http.Handler {
 		if err != nil {
 			http.Error(w, "getting session cookie: "+err.Error(), http.StatusUnauthorized)
 		}
-		claims, err := p.store.ValidateSession(sessionID)
+		user, err := p.store.GetSession(sessionID)
 		if err != nil {
 			http.Error(w, "invalid session: "+err.Error(), http.StatusUnauthorized)
 			return
 		}
-		ctx := context.WithValue(r.Context(), contextKey, claims)
+		ctx := context.WithValue(r.Context(), contextKey, user)
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
@@ -107,32 +107,29 @@ func (p authProvider) Routes() chi.Router {
 	return r
 }
 
-func (p authProvider) UserInfo(r *http.Request) (*oapi.UserInfo, error) {
+func (p authProvider) UserInfo(r *http.Request) (*oapi.User, error) {
 	sessionID, err := getSessionCookie(r)
 	if err != nil {
 		return nil, fmt.Errorf("getting session cookie: %w", err)
 	}
-	claims, err := p.store.ValidateSession(sessionID)
+	user, err := p.store.GetSession(sessionID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid session: %w", err)
 	}
-	return &oapi.UserInfo{
-		Name:    claims.Name,
-		Email:   &claims.Email,
-		Picture: &claims.Picture,
-	}, nil
+	return user, nil
 }
 
 func (p authProvider) handleLogin(w http.ResponseWriter, r *http.Request) {
 	state := uuid.New().String()
 	nonce := uuid.New().String()
 	if p.devMode {
-		sessionID, err := p.store.NewSession("dev", &session.UserClaims{
+		sessionID, err := p.store.NewSession(claimsToUser(&session.UserClaims{
 			Sub:    "dev",
+			Iss:    "dev",
 			Email:  "dev@localhost",
 			Name:   "dev",
 			Groups: []string{"admin", "dev"},
-		})
+		}))
 		if err != nil {
 			http.Error(w, "Creating new session: "+err.Error(), http.StatusInternalServerError)
 		}
@@ -200,19 +197,13 @@ func (p authProvider) handleAuthCallback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	userInfo, err := p.oidc.UserInfo(p.ctx, oauth2.StaticTokenSource(oauth2Token))
-	if err != nil {
-		http.Error(w, "Failed to get userinfo: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	var claims session.UserClaims
-	if err := userInfo.Claims(&claims); err != nil {
+	if err := idToken.Claims(&claims); err != nil {
 		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
 		return
 	}
 
-	sessionID, err := p.store.NewSession(p.config.ClientID, &claims)
+	sessionID, err := p.store.NewSession(claimsToUser(&claims))
 	if err != nil {
 		http.Error(w, "Creating new session: "+err.Error(), http.StatusInternalServerError)
 	}
@@ -229,4 +220,23 @@ func setCallbackCookie(w http.ResponseWriter, r *http.Request, name, value strin
 		HttpOnly: true,
 	}
 	http.SetCookie(w, c)
+}
+
+func claimsToUser(claims *session.UserClaims) *oapi.User {
+	return &oapi.User{
+		Sub:     claims.Sub,
+		Iss:     claims.Iss,
+		Name:    claims.Name,
+		Email:   &claims.Email,
+		Picture: &claims.Picture,
+		Groups:  claims.Groups,
+	}
+}
+
+func getUserContext(r *http.Request) (*oapi.User, error) {
+	user, ok := r.Context().Value(contextKey).(*oapi.User)
+	if !ok {
+		return nil, fmt.Errorf("user context is incorrect type")
+	}
+	return user, nil
 }

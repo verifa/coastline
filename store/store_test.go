@@ -14,6 +14,17 @@ func TestStore(t *testing.T) {
 	store, err := New(ctx, &Config{})
 	require.NoError(t, err)
 
+	user := oapi.User{
+		Sub:  "123",
+		Iss:  "123",
+		Name: "Bob",
+	}
+
+	{
+		_, err := store.createUpdateUser(&user)
+		require.NoError(t, err)
+	}
+
 	newProject := oapi.NewProject{
 		Name: "MyProject",
 	}
@@ -35,24 +46,23 @@ func TestStore(t *testing.T) {
 	assert.Len(t, serviceResp.Services, 1)
 
 	newRequest := oapi.NewRequest{
-		Type:        "test",
-		RequestedBy: "me",
-		ProjectId:   project.Id,
-		ServiceId:   service.Id,
-		Spec:        map[string]interface{}{"request_key": "request_value"},
+		Type:      "test",
+		ProjectId: project.Id,
+		ServiceId: service.Id,
+		Spec:      map[string]interface{}{"request_key": "request_value"},
 	}
-	request, err := store.CreateRequest(&newRequest)
+	request, err := store.CreateRequest(&user, &newRequest)
 	require.NoError(t, err)
 
 	{
-		_, err := store.CreateReview(request.Id, &oapi.NewReview{
+		_, err := store.CreateReview(request.Id, &user, &oapi.NewReview{
 			Status: oapi.NewReviewStatusApprove,
 			Type:   oapi.NewReviewTypeUser,
 		})
 		require.NoError(t, err)
 	}
 	{
-		_, err := store.CreateReview(request.Id, &oapi.NewReview{
+		_, err := store.CreateReview(request.Id, &user, &oapi.NewReview{
 			Status: oapi.NewReviewStatusApprove,
 			Type:   oapi.NewReviewTypeUser,
 		})

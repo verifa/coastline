@@ -8,13 +8,13 @@ import (
 	"github.com/verifa/coastline/ent"
 	"github.com/verifa/coastline/ent/group"
 	entSession "github.com/verifa/coastline/ent/session"
-	"github.com/verifa/coastline/ent/user"
-	"github.com/verifa/coastline/server/session"
+	entUser "github.com/verifa/coastline/ent/user"
+	"github.com/verifa/coastline/server/oapi"
 )
 
-func (s *Store) NewSession(clientID string, claims *session.UserClaims) (uuid.UUID, error) {
+func (s *Store) NewSession(user *oapi.User) (uuid.UUID, error) {
 
-	dbUser, err := s.createUpdateUser(clientID, claims)
+	dbUser, err := s.createUpdateUser(user)
 	if err != nil {
 		return uuid.UUID{}, fmt.Errorf("getting user from database: %w", err)
 	}
@@ -30,7 +30,7 @@ func (s *Store) NewSession(clientID string, claims *session.UserClaims) (uuid.UU
 	return dbSession.ID, nil
 }
 
-func (s *Store) ValidateSession(uuid uuid.UUID) (*session.UserClaims, error) {
+func (s *Store) GetSession(uuid uuid.UUID) (*oapi.User, error) {
 	// Get the session
 	dbSession, err := s.client.Session.Query().Where(entSession.ID(uuid)).WithUser().First(s.ctx)
 	if err != nil {
@@ -52,7 +52,7 @@ func (s *Store) ValidateSession(uuid uuid.UUID) (*session.UserClaims, error) {
 		return nil, fmt.Errorf("session has expired")
 	}
 	dbUser, err := s.client.User.Query().
-		Where(user.ID(dbSession.Edges.User.ID)).
+		Where(entUser.ID(dbSession.Edges.User.ID)).
 		WithGroups().
 		First(s.ctx)
 	if err != nil {
@@ -63,20 +63,7 @@ func (s *Store) ValidateSession(uuid uuid.UUID) (*session.UserClaims, error) {
 		return nil, fmt.Errorf("session does not exist")
 	}
 
-	dbGroups := make([]string, len(dbUser.Edges.Groups))
-	if dbUser.Edges.Groups != nil {
-		for i, entGroup := range dbUser.Edges.Groups {
-			dbGroups[i] = entGroup.Name
-		}
-	}
-
-	return &session.UserClaims{
-		Sub:     dbUser.Sub,
-		Name:    dbUser.Name,
-		Email:   dbUser.Email,
-		Picture: dbUser.Picture,
-		Groups:  dbGroups,
-	}, nil
+	return dbUserToAPI(dbUser), nil
 }
 
 func (s *Store) EndSession(uuid uuid.UUID) error {
@@ -91,30 +78,30 @@ func (s *Store) EndSession(uuid uuid.UUID) error {
 	return nil
 }
 
-func (s *Store) createUpdateUser(clientID string, claims *session.UserClaims) (*ent.User, error) {
+func (s *Store) createUpdateUser(user *oapi.User) (*ent.User, error) {
 	var (
 		dbUser *ent.User
 		err    error
 	)
-	// Get groups in claims
-	dbGroups, err := s.createReadGroups(claims.Groups)
+	// Get database groups from user
+	dbGroups, err := s.createReadGroups(user.Groups)
 	if err != nil {
 		return nil, fmt.Errorf("creating user groups: %w", err)
 	}
-	dbUser, err = s.client.User.Query().Where(
-		user.And(user.ClientID(clientID), user.Sub(claims.Sub)),
-	).First(s.ctx)
+	dbUser, err = s.client.User.Query().
+		Where(entUser.And(entUser.Sub(user.Sub), entUser.Iss(user.Iss))).
+		First(s.ctx)
 	if err != nil {
 		if !ent.IsNotFound(err) {
 			return nil, fmt.Errorf("checking if user exists: %w", err)
 		}
 		// Else we need to create the user
 		dbUser, err = s.client.User.Create().
-			SetClientID(clientID).
-			SetSub(claims.Sub).
-			SetName(claims.Name).
-			SetEmail(claims.Email).
-			SetPicture(claims.Picture).
+			SetSub(user.Sub).
+			SetIss(user.Iss).
+			SetName(user.Name).
+			SetNillableEmail(user.Email).
+			SetNillablePicture(user.Picture).
 			AddGroups(dbGroups...).
 			Save(s.ctx)
 		if err != nil {
@@ -125,15 +112,16 @@ func (s *Store) createUpdateUser(clientID string, claims *session.UserClaims) (*
 	}
 
 	// Get external groups the user is currently a member of
-	extGroups, err := s.client.User.Query().Where(user.ID(dbUser.ID)).QueryGroups().Where(group.IsExternal(true)).All(s.ctx)
+	extGroups, err := s.client.User.Query().Where(entUser.ID(dbUser.ID)).QueryGroups().Where(group.IsExternal(true)).All(s.ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting user external groups: %w", err)
 	}
 
 	// If user already exists, update info for that user.
 	dbUser, err = s.client.User.UpdateOne(dbUser).
-		SetEmail(claims.Email).
-		SetPicture(claims.Picture).
+		SetName(user.Name).
+		SetNillableEmail(user.Email).
+		SetNillablePicture(user.Picture).
 		RemoveGroups(extGroups...).
 		AddGroups(dbGroups...).
 		Save(s.ctx)

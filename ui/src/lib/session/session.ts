@@ -1,9 +1,9 @@
 import type { components } from "$lib/oapi/gen/types"
 
-export type UserInfo = components["schemas"]["UserInfo"]
+export type User = components["schemas"]["User"]
 
 export interface Session {
     initialized: boolean
     authenticated: boolean
-    user?: UserInfo
+    user?: User
 }

@@ -58,7 +58,7 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 		ExposedHeaders:   []string{"*"},
 		AllowCredentials: true,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
-		Debug:            true,
+		// Debug:            true,
 	}))
 
 	serverImpl := ServerImpl{
@@ -82,7 +82,7 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 		r.Mount("/", authProvider.Routes())
 
 		r.Group(func(r chi.Router) {
-			// r.Use(authProvider.authenticateMiddleware)
+			r.Use(authProvider.authenticateMiddleware)
 			//
 			// Projects
 			//

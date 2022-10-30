@@ -25,6 +25,7 @@ func (Review) Fields() []ent.Field {
 func (Review) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("request", Request.Type).Unique().Required(),
+		edge.To("created_by", User.Type).Unique().Required(),
 	}
 }
 

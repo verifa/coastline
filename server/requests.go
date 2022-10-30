@@ -30,7 +30,13 @@ func (s *ServerImpl) CreateRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Validation failed: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	request, err := s.store.CreateRequest(&req)
+
+	user, err := getUserContext(r)
+	if err != nil {
+		http.Error(w, "Getting user context: "+err.Error(), http.StatusInternalServerError)
+	}
+
+	request, err := s.store.CreateRequest(user, &req)
 	if err != nil {
 		http.Error(w, "Creating request: "+err.Error(), http.StatusBadRequest)
 		return

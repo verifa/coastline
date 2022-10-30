@@ -5,13 +5,13 @@
 
 	import { session } from '$lib/session/store';
 	import { createHttpStore } from '$lib/http/store';
-	import type { UserInfo } from '$lib/session/session';
+	import type { User } from '$lib/session/session';
 	import { page } from '$app/stores';
 
 	import { base } from '$app/paths';
 	import NavBar from './NavBar.svelte';
 
-	const authStore = createHttpStore<UserInfo>();
+	const authStore = createHttpStore<User>();
 
 	$: isLoginPage = (): boolean => {
 		return $page.url.pathname === `${base}/login`;

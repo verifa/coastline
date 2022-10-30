@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { createHttpStore } from '$lib/http/store';
-	import { getRequestSpecs } from '$lib/oapi/parse';
-	import type { RequestSpec } from '$lib/oapi/parse';
 
 	import type { SchemaObject, OpenAPI3 } from 'openapi-typescript';
 	import type { components } from '$lib/oapi/gen/types';
@@ -9,9 +7,10 @@
 	import { writable } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
+	import { page } from '$app/stores';
+
 	import RequestObjectForm from '$lib/request/RequestObjectForm.svelte';
 	import Loading from '$lib/Loading.svelte';
-	import { dataset_dev } from 'svelte/internal';
 
 	type ProjectsResp = components['schemas']['ProjectsResp'];
 	type ServicesResp = components['schemas']['ServicesResp'];
@@ -30,9 +29,9 @@
 		service_id: '',
 		type: '',
 		status: 'pending_approval',
-		requested_by: '',
 		spec: {}
 	});
+
 	projectStore.get('/projects');
 
 	// TODO: remove this, but it's useful for debugging at the moment
@@ -71,8 +70,14 @@
 	}
 
 	function handleSubmit() {
-		$requestStore.requested_by = $session.user?.name || 'anonymous';
 		requestsSubmitStore.post('/requests', {}, $requestStore);
+	}
+
+	// Check search params
+	const projectId = $page.url.searchParams.get('project_id');
+	if (projectId) {
+		$requestStore.project_id = projectId;
+		handleProjectChange();
 	}
 </script>
 

@@ -379,7 +379,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserInfo"
+                $ref: "#/components/schemas/User"
         default:
           description: unexpected error
           content:
@@ -501,13 +501,10 @@ components:
       type: object
       required:
         - type
-        - requested_by
         - status
         - spec
       properties:
         type:
-          type: string
-        requested_by:
           type: string
         status:
           type: string
@@ -523,6 +520,7 @@ components:
             - project
             - service
             - reviews
+            - createdBy
           properties:
             id:
               type: string
@@ -530,6 +528,8 @@ components:
               x-go-type: uuid.UUID
               x-go-type-import:
                 path: github.com/google/uuid
+            createdBy:
+              $ref: "#/components/schemas/User"
             project:
               $ref: "#/components/schemas/Project"
             service:
@@ -597,6 +597,7 @@ components:
         - type: object
           required:
             - id
+            - createdBy
           properties:
             id:
               type: string
@@ -604,6 +605,8 @@ components:
               x-go-type: uuid.UUID
               x-go-type-import:
                 path: github.com/google/uuid
+            createdBy:
+              $ref: "#/components/schemas/User"
     NewReview:
       type: object
       required:
@@ -617,21 +620,28 @@ components:
           type: string
           enum: ["user", "auto"]
 
-    UserInfo:
+    User:
       type: object
       required:
+        - sub
+        - iss
         - name
+        - groups
       properties:
+        sub:
+          type: string
+        iss:
+          type: string
         name:
-          type: string
-        given_name:
-          type: string
-        family_name:
           type: string
         email:
           type: string
         picture:
           type: string
+        groups:
+          type: array
+          items:
+            type: string
     UsersResp:
       type: object
       required:
@@ -640,7 +650,7 @@ components:
         users:
           type: array
           items:
-            $ref: "#/components/schemas/UserInfo"
+            $ref: "#/components/schemas/User"
     # TODO: remove this as we probably don't need it.
     # Responses already have a code/status (in header)
     # and the message is sent as plain text

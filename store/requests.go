@@ -30,13 +30,19 @@ func (s *Store) QueryRequests(ps ...predicate.Request) (*oapi.RequestsResp, erro
 	}, nil
 }
 
-func (s *Store) CreateRequest(req *oapi.NewRequest) (*oapi.Request, error) {
+func (s *Store) CreateRequest(user *oapi.User, req *oapi.NewRequest) (*oapi.Request, error) {
+
+	dbUser, err := s.getEntUser(user)
+	if err != nil {
+		return nil, fmt.Errorf("getting user: %w", err)
+	}
+
 	dbRequest, err := s.client.Request.Create().
 		SetType(req.Type).
 		SetProjectID(req.ProjectId).
 		SetServiceID(req.ServiceId).
-		SetRequestedBy(req.RequestedBy).
 		SetSpec(req.Spec).
+		SetCreatedBy(dbUser).
 		Save(s.ctx)
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
@@ -94,11 +100,11 @@ func (s *Store) HandleNewReview(m *ent.ReviewMutation) error {
 
 func dbRequestToAPI(dbRequest *ent.Request) *oapi.Request {
 	request := oapi.Request{
-		Id:          dbRequest.ID,
-		Type:        dbRequest.Type,
-		RequestedBy: dbRequest.RequestedBy,
-		Status:      oapi.RequestStatus(dbRequest.Status),
-		Spec:        dbRequest.Spec,
+		Id:   dbRequest.ID,
+		Type: dbRequest.Type,
+		// RequestedBy: dbRequest.RequestedBy,
+		Status: oapi.RequestStatus(dbRequest.Status),
+		Spec:   dbRequest.Spec,
 	}
 	if dbRequest.Edges.Project != nil {
 		request.Project = *dbProjectToAPI(dbRequest.Edges.Project)

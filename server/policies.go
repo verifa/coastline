@@ -35,7 +35,7 @@ func NewPolicyEngine() *PolicyEngine {
 	}
 }
 
-func (pe PolicyEngine) EvaluateLoginRequest(userInfo oapi.UserInfo) (bool, error) {
+func (pe PolicyEngine) EvaluateLoginRequest(userInfo oapi.User) (bool, error) {
 
 	policies := pe.Policies[LoginPolicyType]
 

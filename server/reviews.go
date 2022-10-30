@@ -14,7 +14,13 @@ func (s *ServerImpl) ReviewRequest(w http.ResponseWriter, r *http.Request, id uu
 		http.Error(w, "Decoding request body: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	review, err := s.store.CreateReview(id, &req)
+
+	user, err := getUserContext(r)
+	if err != nil {
+		http.Error(w, "Getting user context: "+err.Error(), http.StatusInternalServerError)
+	}
+
+	review, err := s.store.CreateReview(id, user, &req)
 	if err != nil {
 		http.Error(w, "Creating review: "+err.Error(), http.StatusBadRequest)
 		return

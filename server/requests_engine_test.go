@@ -43,8 +43,7 @@ func TestRequestsEngine(t *testing.T) {
 	}{
 		{
 			req: oapi.NewRequest{
-				Type:        "ArtifactoryRepoRequest",
-				RequestedBy: "someone",
+				Type: "ArtifactoryRepoRequest",
 				Spec: map[string]interface{}{
 					"repo": "hello",
 				},
@@ -53,8 +52,7 @@ func TestRequestsEngine(t *testing.T) {
 		},
 		{
 			req: oapi.NewRequest{
-				Type:        "JenkinsServerRequest",
-				RequestedBy: "someone",
+				Type: "JenkinsServerRequest",
 				Spec: map[string]interface{}{
 					"name": "hello",
 				},
@@ -63,8 +61,7 @@ func TestRequestsEngine(t *testing.T) {
 		},
 		{
 			req: oapi.NewRequest{
-				Type:        "InvalidJenkinsServerRequest",
-				RequestedBy: "someone",
+				Type: "InvalidJenkinsServerRequest",
 				Spec: map[string]interface{}{
 					"repo": "hello",
 				},

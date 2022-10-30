@@ -16,7 +16,7 @@
 
 	createProjectStore.subscribe((value) => {
 		if (value.ok) {
-			goto(`${base}`);
+			goto(`${base}/services`);
 		} else {
 			// TODO: something went wrong
 		}

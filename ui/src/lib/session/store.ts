@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store'
-import type { Session, UserInfo } from './session'
+import type { Session, User } from './session'
 
 export const session = createSessionStore()
 
@@ -11,7 +11,7 @@ function createSessionStore() {
 
     return {
         subscribe,
-        login: (user: UserInfo) => {
+        login: (user: User) => {
             set({
                 initialized: true,
                 authenticated: true,

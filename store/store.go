@@ -87,8 +87,18 @@ func (s *Store) RegisterHooks() {
 
 // init populates the database with some initial data
 func (s *Store) init() error {
+
+	dummyUser := oapi.User{
+		Sub:  "dummy",
+		Iss:  "dummy",
+		Name: "dummy",
+	}
 	// TODO: this is really hacky as it doesn't check if the data already exists
 	// so if using persistent data it will fail...
+	_, err := s.createUpdateUser(&dummyUser)
+	if err != nil {
+		return fmt.Errorf("creating user: %w", err)
+	}
 	project, err := s.CreateProject(&oapi.NewProject{
 		Name: "dummy-project",
 	})
@@ -109,35 +119,32 @@ func (s *Store) init() error {
 	{
 		requests := []*oapi.NewRequest{
 			{
-				ProjectId:   project.Id,
-				ServiceId:   service.Id,
-				RequestedBy: "dummy-user",
-				Type:        "JenkinsServerRequest",
+				ProjectId: project.Id,
+				ServiceId: service.Id,
+				Type:      "JenkinsServerRequest",
 				Spec: map[string]interface{}{
 					"name": "server-1",
 				},
 			},
 			{
-				ProjectId:   project.Id,
-				ServiceId:   service.Id,
-				RequestedBy: "dummy-user",
-				Type:        "JenkinsServerRequest",
+				ProjectId: project.Id,
+				ServiceId: service.Id,
+				Type:      "JenkinsServerRequest",
 				Spec: map[string]interface{}{
 					"name": "server-2",
 				},
 			},
 			{
-				ProjectId:   project.Id,
-				ServiceId:   service.Id,
-				RequestedBy: "dummy-user",
-				Type:        "JenkinsServerRequest",
+				ProjectId: project.Id,
+				ServiceId: service.Id,
+				Type:      "JenkinsServerRequest",
 				Spec: map[string]interface{}{
 					"name": "server-3",
 				},
 			},
 		}
 		for i, req := range requests {
-			if _, err := s.CreateRequest(req); err != nil {
+			if _, err := s.CreateRequest(&dummyUser, req); err != nil {
 				return fmt.Errorf("creating request %d: %w", i, err)
 			}
 		}

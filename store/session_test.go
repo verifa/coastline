@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/verifa/coastline/server/session"
+	"github.com/verifa/coastline/server/oapi"
 )
 
 func TestGroup(t *testing.T) {
@@ -35,51 +35,53 @@ func TestSession(t *testing.T) {
 	store, err := New(ctx, &Config{})
 	require.NoError(t, err)
 
-	claims := &session.UserClaims{
+	dummyUser := &oapi.User{
 		Sub:    "123",
-		Email:  "test@localhost",
+		Iss:    "123",
 		Name:   "Testy Test",
 		Groups: []string{"user"},
 	}
 
 	{
 		// Simple case
-		sessionID, err := store.NewSession("abc", claims)
+		sessionID, err := store.NewSession(dummyUser)
 		require.NoError(t, err)
 
-		retClaims, err := store.ValidateSession(sessionID)
+		sessionUser, err := store.GetSession(sessionID)
 		require.NoError(t, err)
-		assert.Equal(t, claims, retClaims)
+		assert.Equal(t, dummyUser, sessionUser)
 	}
 	{
 		// Same user, same client_id
-		sessionID, err := store.NewSession("abc", claims)
+		sessionID, err := store.NewSession(dummyUser)
 		require.NoError(t, err)
 
-		retClaims, err := store.ValidateSession(sessionID)
+		sessionUser, err := store.GetSession(sessionID)
 		require.NoError(t, err)
-		assert.Equal(t, claims, retClaims)
+		assert.Equal(t, dummyUser, sessionUser)
 	}
 	{
+		anotherUser := *dummyUser
+		anotherUser.Iss = "xyz"
 		// Create under another client ID
-		sessionID, err := store.NewSession("xyz", claims)
+		sessionID, err := store.NewSession(&anotherUser)
 		require.NoError(t, err)
 
-		retClaims, err := store.ValidateSession(sessionID)
+		sessionUser, err := store.GetSession(sessionID)
 		require.NoError(t, err)
-		assert.Equal(t, claims, retClaims)
+		assert.Equal(t, &anotherUser, sessionUser)
 	}
 
-	// Let's add and remove a group to the claims
-	claims.Groups = []string{"admin"}
+	// Let's add and remove a group to the user
+	dummyUser.Groups = []string{"admin"}
 	{
 		// Simple case
-		sessionID, err := store.NewSession("abc", claims)
+		sessionID, err := store.NewSession(dummyUser)
 		require.NoError(t, err)
 
-		retClaims, err := store.ValidateSession(sessionID)
+		sessionUser, err := store.GetSession(sessionID)
 		require.NoError(t, err)
-		assert.Equal(t, claims, retClaims)
+		assert.Equal(t, dummyUser, sessionUser)
 	}
 
 	// Check we have 2 sessions and 2 users
@@ -94,23 +96,23 @@ func TestSessionExpired(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	claims := &session.UserClaims{
+	dummyUser := &oapi.User{
 		Sub:    "123",
-		Email:  "test@localhost",
+		Iss:    "123",
 		Name:   "Testy Test",
 		Groups: []string{"user"},
 	}
 
 	{
-		sessionID, err := store.NewSession("abc", claims)
+		sessionID, err := store.NewSession(dummyUser)
 		require.NoError(t, err)
 
-		_, err = store.ValidateSession(sessionID)
+		_, err = store.GetSession(sessionID)
 		require.NoError(t, err)
 
 		time.Sleep(time.Second)
 
-		_, err = store.ValidateSession(sessionID)
+		_, err = store.GetSession(sessionID)
 		// Expect session expired error
 		assert.Error(t, err)
 	}
