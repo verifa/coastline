@@ -9,6 +9,13 @@ package basic
 #SimpleTypes: {
 	// An example request with simple types 2
 	type: "SimpleTypes"
+	service: {
+		selector: {
+			matchLabels: {
+				tool: "artifactory"
+			}
+		}
+	}
 	spec: {
 		// Just a text field
 		text: string
@@ -63,8 +70,17 @@ package basic
 
 #JenkinsServerRequest: {
 	type: "JenkinsServerRequest"
+	service: {
+		selector: {
+			matchLabels: {
+				tool: "artifactory"
+			}
+		}
+	}
 	spec: {
 		// Name must not contain space or strange characters
 		name: =~"^[A-Za-z0-9-]+$"
+		// Provide an integer, not a number
+		integer: uint8
 	}
 }

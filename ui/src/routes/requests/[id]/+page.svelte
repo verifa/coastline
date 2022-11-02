@@ -103,6 +103,7 @@
 				>// Or render based on the current (if it exists) OpenAPI spec for the request template?</code
 			></pre>
 		<pre><code>// The request template, if it exists, might have changed...</code></pre>
+		<pre><code>{JSON.stringify($requestStore.data.spec, null, 2)}</code></pre>
 	</div>
 	<!-- <RequestObjectForm schemaObj={$store.data.spec} /> -->
 {/if}

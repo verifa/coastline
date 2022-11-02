@@ -1,10 +1,11 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"cuelang.org/go/cue/cuecontext"
+	cuejson "cuelang.org/go/encoding/json"
 	"github.com/google/uuid"
 	"github.com/verifa/coastline/ent/request"
 	"github.com/verifa/coastline/server/oapi"
@@ -20,11 +21,26 @@ func (s *ServerImpl) GetRequests(w http.ResponseWriter, r *http.Request, params 
 }
 
 func (s *ServerImpl) CreateRequest(w http.ResponseWriter, r *http.Request) {
+	// Decode request into CUE expression
 	var req oapi.NewRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	d := cuejson.NewDecoder(s.engine.runtime, "", r.Body)
+	expr, err := d.Extract()
+	if err != nil {
 		http.Error(w, "Decoding request body: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+	// Build CUE value from expression
+	v := cuecontext.New().BuildExpr(expr)
+	if v.Err() != nil {
+		http.Error(w, "Building cue value: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	// Encode CUE value into Go request
+	if err := s.engine.codec.Encode(v, &req); err != nil {
+		http.Error(w, "Encoding cue value: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	// Validate the request against the requests engine
 	if err := s.engine.Validate(req); err != nil {
 		http.Error(w, "Validation failed: "+err.Error(), http.StatusBadRequest)

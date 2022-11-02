@@ -41,6 +41,7 @@
 		class="inline py-0 px-2 bg-inherit border-2 border-transparent focus:border-inherit focus:outline-none"
 		{placeholder}
 		bind:value={store}
+		step="1"
 		type="number"
 		required={prop.is_required}
 	/>
@@ -48,7 +49,7 @@
 	<input
 		type="checkbox"
 		class="inline-block align-middle focus:outline-none toggle toggle-sm border-primary checked:bg-success"
-		bind:value={store}
+		bind:checked={store}
 	/>
 {:else}
 	<span class="px-2 border-2 border-error">Error: unsupported type {prop.schema.type}</span>

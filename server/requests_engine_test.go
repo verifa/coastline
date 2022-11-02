@@ -23,7 +23,7 @@ func TestTemplatesForService(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	assert.Len(t, reqs, 1)
+	assert.Len(t, reqs, 3)
 
 	b, err := e.OpenAPISpec("ArtifactoryRepoRequest")
 	require.NoError(t, err)
