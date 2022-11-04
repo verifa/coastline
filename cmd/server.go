@@ -21,8 +21,10 @@ import (
 	"net/http"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/verifa/coastline/requests"
 	"github.com/verifa/coastline/server"
 	"github.com/verifa/coastline/store"
+	"github.com/verifa/coastline/worker"
 
 	"github.com/spf13/cobra"
 )
@@ -45,12 +47,28 @@ to quickly create a Cobra application.`,
 		if serverConfig.DevMode {
 			storeConfig.InitData = true
 		}
+
+		engine, err := requests.Load(&requestsConfig)
+		if err != nil {
+			return fmt.Errorf("loading requests engine: %w", err)
+		}
+
+		if serverConfig.DevMode {
+			if err := startNats(); err != nil {
+				return fmt.Errorf("starting nats: %w", err)
+			}
+			err := worker.Start(engine, &worker.Config{})
+			if err != nil {
+				return fmt.Errorf("starting nats worker: %w", err)
+			}
+		}
+
 		store, err := store.New(ctx, &storeConfig)
 		if err != nil {
 			return fmt.Errorf("creating store: %w", err)
 		}
 
-		srv, err := server.New(ctx, store, &serverConfig)
+		srv, err := server.New(ctx, store, engine, &serverConfig)
 		if err != nil {
 			return fmt.Errorf("creating server: %w", err)
 		}
@@ -67,6 +85,4 @@ func init() {
 	rootCmd.AddCommand(serverCmd)
 
 	serverCmd.Flags().BoolVarP(&serverConfig.DevMode, "dev", "d", serverConfig.DevMode, "Enable dev mode")
-	serverCmd.Flags().StringVarP(&serverConfig.RequestsEngine.Templates, "templates", "t", serverConfig.RequestsEngine.Templates, "Path to request templates to load")
-	serverCmd.Flags().StringVarP(&serverConfig.Dir, "directory", "C", ".", "Base directory to run command from")
 }

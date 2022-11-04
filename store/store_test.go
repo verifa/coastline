@@ -3,15 +3,36 @@ package store
 import (
 	"context"
 	"testing"
+	"time"
 
+	"github.com/nats-io/nats-server/v2/server"
+	natsserver "github.com/nats-io/nats-server/v2/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/verifa/coastline/server/oapi"
 )
 
+var defaultTestConfig = Config{
+	InitData:  false,
+	SkipHooks: true,
+	SkipNATS:  true,
+}
+
+func startNatsTestServer(t *testing.T) *server.Server {
+	opts := natsserver.DefaultTestOptions
+	ns := server.New(&opts)
+	go ns.Start()
+	timeout := time.Second * 2
+	// Wait for server to be ready for connections
+	if !ns.ReadyForConnections(timeout) {
+		t.Fatal("waiting for nats to start")
+	}
+	return ns
+}
+
 func TestStore(t *testing.T) {
 	ctx := context.TODO()
-	store, err := New(ctx, &Config{})
+	store, err := New(ctx, &defaultTestConfig)
 	require.NoError(t, err)
 
 	user := oapi.User{
@@ -46,7 +67,7 @@ func TestStore(t *testing.T) {
 	assert.Len(t, serviceResp.Services, 1)
 
 	newRequest := oapi.NewRequest{
-		Type:      "test",
+		Kind:      "test",
 		ProjectId: project.Id,
 		ServiceId: service.Id,
 		Spec:      map[string]interface{}{"request_key": "request_value"},

@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/verifa/coastline/requests"
 	"github.com/verifa/coastline/server/oapi"
 	"github.com/verifa/coastline/store"
 	"github.com/verifa/coastline/ui"
@@ -17,17 +18,16 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/go-chi/httplog"
 )
 
 type Config struct {
-	DevMode        bool                 `envconfig:"dev"`
-	Dir            string               `envconfig:"-"`
-	RedirectURI    string               `envconfig:"-"`
-	Auth           AuthConfig           `envconfig:"auth"`
-	RequestsEngine RequestsEngineConfig `envconfig:"-"`
+	DevMode     bool       `envconfig:"dev"`
+	RedirectURI string     `envconfig:"-"`
+	Auth        AuthConfig `envconfig:"auth"`
 }
 
-func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, error) {
+func New(ctx context.Context, store *store.Store, engine *requests.Engine, config *Config) (*chi.Mux, error) {
 
 	if store == nil {
 		return nil, fmt.Errorf("store is required")
@@ -35,18 +35,20 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 	if config == nil {
 		return nil, fmt.Errorf("config is required")
 	}
-	engine, err := NewRequestsEngine(&config.RequestsEngine)
-	if err != nil {
-		return nil, fmt.Errorf("creating requests engine: %w", err)
-	}
 
 	authProvider, err := newAuthProvider(ctx, store, config.Auth, config.DevMode)
 	if err != nil {
 		return nil, fmt.Errorf("creating authentication provider: %w", err)
 	}
 
+	// Create logger
+	logger := httplog.NewLogger("coastline", httplog.Options{
+		JSON:    false,
+		Concise: true,
+	})
+
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	r.Use(httplog.RequestLogger(logger))
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Heartbeat("/healthz"))
 
@@ -63,8 +65,8 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 
 	serverImpl := ServerImpl{
 		auth:   authProvider,
-		store:  store,
 		engine: engine,
+		store:  store,
 	}
 	wrapper := oapi.ServerInterfaceWrapper{
 		Handler: &serverImpl,
@@ -183,8 +185,8 @@ var _ oapi.ServerInterface = (*ServerImpl)(nil)
 
 type ServerImpl struct {
 	auth   *authProvider
+	engine *requests.Engine
 	store  *store.Store
-	engine *RequestsEngine
 }
 
 func returnJSON(w http.ResponseWriter, obj interface{}) {

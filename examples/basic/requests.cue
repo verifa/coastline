@@ -8,7 +8,7 @@ package basic
 // An example request with simple types 1
 #SimpleTypes: {
 	// An example request with simple types 2
-	type: "SimpleTypes"
+	kind: "SimpleTypes"
 	service: {
 		selector: {
 			matchLabels: {
@@ -52,7 +52,7 @@ package basic
 }
 
 #ArtifactoryRepoRequest: {
-	type: "ArtifactoryRepoRequest"
+	kind: "ArtifactoryRepoRequest"
 	service: {
 		selector: {
 			matchLabels: {
@@ -65,22 +65,5 @@ package basic
 		repo: string
 		// General metadata for the request
 		metadata: #metadata
-	}
-}
-
-#JenkinsServerRequest: {
-	type: "JenkinsServerRequest"
-	service: {
-		selector: {
-			matchLabels: {
-				tool: "artifactory"
-			}
-		}
-	}
-	spec: {
-		// Name must not contain space or strange characters
-		name: =~"^[A-Za-z0-9-]+$"
-		// Provide an integer, not a number
-		integer: uint8
 	}
 }

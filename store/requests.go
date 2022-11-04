@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/verifa/coastline/ent"
@@ -8,6 +9,7 @@ import (
 	"github.com/verifa/coastline/ent/request"
 	"github.com/verifa/coastline/ent/review"
 	"github.com/verifa/coastline/server/oapi"
+	"github.com/verifa/coastline/worker"
 )
 
 func (s *Store) QueryRequests(ps ...predicate.Request) (*oapi.RequestsResp, error) {
@@ -38,7 +40,7 @@ func (s *Store) CreateRequest(user *oapi.User, req *oapi.NewRequest) (*oapi.Requ
 	}
 
 	dbRequest, err := s.client.Request.Create().
-		SetType(req.Type).
+		SetKind(req.Kind).
 		SetProjectID(req.ProjectId).
 		SetServiceID(req.ServiceId).
 		SetSpec(req.Spec).
@@ -98,11 +100,64 @@ func (s *Store) HandleNewReview(m *ent.ReviewMutation) error {
 	return nil
 }
 
+// HandleUpdatedRequest is called whenever a request is updated (or mutated, in ent terms)
+// and is responsible for triggering a deployment if the request is approved
+func (s *Store) HandleUpdatedRequest(m *ent.RequestMutation) error {
+	requestStatus, ok := m.Status()
+	if !ok {
+		// Shouldn't happen, but let's just exit. Or maybe we should error?
+		return nil
+	}
+	// For now we only care about the Approved status.
+	// Finish here if it's not the Approved status
+	if requestStatus != request.StatusApproved {
+		return nil
+	}
+
+	requestID, ok := m.ID()
+	if !ok {
+		return fmt.Errorf("request does not have ID")
+	}
+
+	c := m.Client()
+
+	dbTrigger, err := c.Trigger.Create().SetRequestID(requestID).Save(s.ctx)
+	if err != nil {
+		return fmt.Errorf("creating trigger in database: %w", err)
+	}
+
+	dbRequest, err := c.Request.Query().
+		Where(request.ID(requestID)).
+		WithProject().
+		WithService().
+		WithReviews().
+		First(s.ctx)
+	if err != nil {
+		return fmt.Errorf("getting request with ID: %s: %w", requestID.String(), err)
+	}
+
+	msg := worker.TriggerMsg{
+		TriggerID: dbTrigger.ID,
+		Request:   dbRequestToAPI(dbRequest),
+	}
+	msgBytes, err := json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("marshalling request trigger message: %w", err)
+	}
+
+	// Publish a new trigger
+	pubErr := s.nc.Publish(subjectTriggerRun, msgBytes)
+	if pubErr != nil {
+		return fmt.Errorf("publishing request trigger: %w", pubErr)
+	}
+
+	return nil
+}
+
 func dbRequestToAPI(dbRequest *ent.Request) *oapi.Request {
 	request := oapi.Request{
-		Id:   dbRequest.ID,
-		Type: dbRequest.Type,
-		// RequestedBy: dbRequest.RequestedBy,
+		Id:     dbRequest.ID,
+		Kind:   dbRequest.Kind,
 		Status: oapi.RequestStatus(dbRequest.Status),
 		Spec:   dbRequest.Spec,
 	}

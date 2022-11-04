@@ -54,13 +54,13 @@ func (s *ServerImpl) GetRequestTemplatesForService(w http.ResponseWriter, r *htt
 		http.Error(w, "Service not found", http.StatusNotFound)
 		return
 	}
-	reqTemplates := s.engine.RequestTemplatesForService(&services.Services[0])
+	reqTemplates := s.engine.TemplatesForService(&services.Services[0])
 	resp := oapi.RequestTemplatesResp{
 		Templates: make([]oapi.RequestTemplate, len(reqTemplates)),
 	}
 	for i, req := range reqTemplates {
 		resp.Templates[i] = oapi.RequestTemplate{
-			Type: req.Type,
+			Kind: req.Def.Kind,
 		}
 	}
 	returnJSON(w, resp)

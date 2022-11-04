@@ -25,7 +25,7 @@
 						<StatusBadge {request} />
 					</td>
 					<td>
-						{request.type}
+						{request.kind}
 					</td>
 					<td>
 						{request.project.name}
