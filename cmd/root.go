@@ -48,11 +48,17 @@ func Execute() {
 }
 
 func init() {
+	cobra.OnInitialize(initConfig)
+
 	rootCmd.PersistentFlags().StringSliceVar(&configFiles, "config", nil, "config files to parse")
 }
 
 // initConfig reads in .env config files, if any
 func initConfig() {
-	err := godotenv.Load(configFiles...)
-	cobra.CheckErr(err)
+	// If configFiles is nil, godotenv will look for a local .env file by default, which
+	// is kind of unexpected for a user
+	if configFiles != nil {
+		err := godotenv.Overload(configFiles...)
+		cobra.CheckErr(err)
+	}
 }
