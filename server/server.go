@@ -45,6 +45,11 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 		return nil, fmt.Errorf("creating authentication provider: %w", err)
 	}
 
+	pengine, err := NewPolicyEngine()
+	if err != nil {
+		return nil, fmt.Errorf("creating policy engine: %w", err)
+	}
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -62,9 +67,10 @@ func New(ctx context.Context, store *store.Store, config *Config) (*chi.Mux, err
 	}))
 
 	serverImpl := ServerImpl{
-		auth:   authProvider,
-		store:  store,
-		engine: engine,
+		auth:    authProvider,
+		store:   store,
+		engine:  engine,
+		pengine: pengine,
 	}
 	wrapper := oapi.ServerInterfaceWrapper{
 		Handler: &serverImpl,
@@ -182,9 +188,10 @@ func handleUI() http.Handler {
 var _ oapi.ServerInterface = (*ServerImpl)(nil)
 
 type ServerImpl struct {
-	auth   *authProvider
-	store  *store.Store
-	engine *RequestsEngine
+	auth    *authProvider
+	store   *store.Store
+	engine  *RequestsEngine
+	pengine *PolicyEngine
 }
 
 func returnJSON(w http.ResponseWriter, obj interface{}) {

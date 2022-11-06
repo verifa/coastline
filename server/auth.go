@@ -29,7 +29,10 @@ type ContextKey string
 var contextKey ContextKey = "AUTH_CONTEXT"
 
 func newAuthProvider(ctx context.Context, store *store.Store, config AuthConfig, devMode bool) (*authProvider, error) {
-	police := NewPolicyEngine()
+	police, err := NewPolicyEngine()
+	if err != nil {
+		return nil, fmt.Errorf("creating authentication provider: %w", err)
+	}
 
 	if devMode {
 		return &authProvider{

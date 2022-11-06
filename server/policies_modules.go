@@ -1,18 +1,5 @@
 package server
 
-var loginOutputModule = `
-package auth
-
-result = {
-	"admin": admin,
-	"allow": allow,
-	"deny": deny,
-}
-
-default admin = false
-default allow = false
-default deny = false
-`
 var loginPolicies = []Policy{
 	{
 		Name: "Admins",
