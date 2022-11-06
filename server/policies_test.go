@@ -8,7 +8,7 @@ import (
 )
 
 func TestPolicies(t *testing.T) {
-	pe := NewPolicyEngine()
+	pe, _ := NewPolicyEngine()
 	allow, err := pe.EvaluateLoginRequest(oapi.User{})
 	require.NoError(t, err)
 	t.Log("allow: ", allow)

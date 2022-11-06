@@ -11,9 +11,27 @@ import (
 
 func (s *ServerImpl) GetProjects(w http.ResponseWriter, r *http.Request, params oapi.GetProjectsParams) {
 	resp, err := s.store.QueryProjects()
+	ctx := r.Context()
+
+	userInfoPointer := ctx.Value(contextKey).(*oapi.User)
+	userInfo := *userInfoPointer
+
 	if err != nil {
 		http.Error(w, "Querying projects: "+err.Error(), http.StatusInternalServerError)
 	}
+
+	// filter out projects that user is not allowed to see
+	projects := []oapi.Project{}
+	for _, project := range resp.Projects {
+		allow, err := s.pengine.EvaluateAccessPolicy(userInfo, project)
+		if err != nil {
+			http.Error(w, "Evaluating access to projects: "+err.Error(), http.StatusInternalServerError)
+		}
+		if allow {
+			projects = append(projects, project)
+		}
+	}
+	resp.Projects = projects
 	returnJSON(w, resp)
 }
 
