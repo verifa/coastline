@@ -22,7 +22,9 @@
 			{#each requests as request}
 				<tr>
 					<td>
-						<StatusBadge {request} />
+						<a href="{base}/requests/{request.id}" class="no-underline">
+							<StatusBadge {request} />
+						</a>
 					</td>
 					<td>
 						{request.kind}
