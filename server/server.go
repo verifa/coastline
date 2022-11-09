@@ -105,6 +105,7 @@ func New(ctx context.Context, store *store.Store, engine *requests.Engine, confi
 			r.Post("/requests", wrapper.CreateRequest)
 			r.Get("/requests/{id}", wrapper.GetRequestByID)
 			r.Post("/requests/{id}/review", wrapper.ReviewRequest)
+			r.Post("/requests/{id}/trigger", wrapper.TriggerRequest)
 			r.Get("/templates/{id}/openapi", wrapper.GetRequestTemplateSpec)
 			//
 			// UserInfo

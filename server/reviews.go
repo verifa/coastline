@@ -18,6 +18,7 @@ func (s *ServerImpl) ReviewRequest(w http.ResponseWriter, r *http.Request, id uu
 	user, err := getUserContext(r)
 	if err != nil {
 		http.Error(w, "Getting user context: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	review, err := s.store.CreateReview(id, user, &req)

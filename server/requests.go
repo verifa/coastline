@@ -57,6 +57,16 @@ func (s *ServerImpl) GetRequestTemplateSpec(w http.ResponseWriter, r *http.Reque
 	spec, err := s.engine.OpenAPISpec(id)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Generating OpenAPI specification for %s: %s", id, err.Error()), http.StatusBadRequest)
+		return
 	}
 	returnBytesAsJSON(w, spec)
+}
+
+func (s *ServerImpl) TriggerRequest(w http.ResponseWriter, r *http.Request, id uuid.UUID) {
+	trigger, err := s.store.CreateTrigger(id)
+	if err != nil {
+		http.Error(w, "Creating trigger: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	returnJSON(w, trigger)
 }

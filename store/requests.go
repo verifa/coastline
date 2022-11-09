@@ -1,7 +1,6 @@
 package store
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/verifa/coastline/ent"
@@ -9,7 +8,6 @@ import (
 	"github.com/verifa/coastline/ent/request"
 	"github.com/verifa/coastline/ent/review"
 	"github.com/verifa/coastline/server/oapi"
-	"github.com/verifa/coastline/worker"
 )
 
 func (s *Store) QueryRequests(ps ...predicate.Request) (*oapi.RequestsResp, error) {
@@ -122,36 +120,9 @@ func (s *Store) HandleUpdatedRequest(m *ent.RequestMutation) error {
 		return fmt.Errorf("request does not have ID")
 	}
 
-	c := m.Client()
-
-	dbTrigger, err := c.Trigger.Create().SetRequestID(requestID).Save(s.ctx)
+	_, err := s.CreateTrigger(requestID)
 	if err != nil {
-		return fmt.Errorf("creating trigger in database: %w", err)
-	}
-
-	dbRequest, err := c.Request.Query().
-		Where(request.ID(requestID)).
-		WithProject().
-		WithService().
-		WithReviews().
-		First(s.ctx)
-	if err != nil {
-		return fmt.Errorf("getting request with ID: %s: %w", requestID.String(), err)
-	}
-
-	msg := worker.TriggerMsg{
-		TriggerID: dbTrigger.ID,
-		Request:   dbRequestToAPI(dbRequest),
-	}
-	msgBytes, err := json.Marshal(msg)
-	if err != nil {
-		return fmt.Errorf("marshalling request trigger message: %w", err)
-	}
-
-	// Publish a new trigger
-	pubErr := s.nc.Publish(subjectTriggerRun, msgBytes)
-	if pubErr != nil {
-		return fmt.Errorf("publishing request trigger: %w", pubErr)
+		return fmt.Errorf("creating trigger: %w", err)
 	}
 
 	return nil
@@ -179,22 +150,4 @@ func dbRequestToAPI(dbRequest *ent.Request) *oapi.Request {
 		request.Triggers[i] = *dbTriggerToAPI(dbTrigger)
 	}
 	return &request
-}
-
-func dbTriggerToAPI(dbTrigger *ent.Trigger) *oapi.Trigger {
-	trigger := oapi.Trigger{
-		Id: dbTrigger.ID,
-	}
-	tasks := make([]oapi.Task, len(dbTrigger.Edges.Tasks))
-
-	for i, dbTask := range dbTrigger.Edges.Tasks {
-		tasks[i] = oapi.Task{
-			Id:     dbTask.ID,
-			Output: dbTask.Output,
-			Error:  dbTask.Error,
-		}
-	}
-	trigger.Tasks = tasks
-
-	return &trigger
 }
