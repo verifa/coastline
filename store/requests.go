@@ -17,6 +17,9 @@ func (s *Store) QueryRequests(ps ...predicate.Request) (*oapi.RequestsResp, erro
 		WithProject().
 		WithService().
 		WithReviews().
+		WithTriggers(func(tq *ent.TriggerQuery) {
+			tq.WithTasks()
+		}).
 		All(s.ctx)
 	if err != nil {
 		return nil, fmt.Errorf("querying requests: %w", err)
@@ -156,10 +159,12 @@ func (s *Store) HandleUpdatedRequest(m *ent.RequestMutation) error {
 
 func dbRequestToAPI(dbRequest *ent.Request) *oapi.Request {
 	request := oapi.Request{
-		Id:     dbRequest.ID,
-		Kind:   dbRequest.Kind,
-		Status: oapi.RequestStatus(dbRequest.Status),
-		Spec:   dbRequest.Spec,
+		Id:       dbRequest.ID,
+		Kind:     dbRequest.Kind,
+		Status:   oapi.RequestStatus(dbRequest.Status),
+		Spec:     dbRequest.Spec,
+		Triggers: make([]oapi.Trigger, len(dbRequest.Edges.Triggers)),
+		Reviews:  make([]oapi.Review, len(dbRequest.Edges.Reviews)),
 	}
 	if dbRequest.Edges.Project != nil {
 		request.Project = *dbProjectToAPI(dbRequest.Edges.Project)
@@ -167,10 +172,29 @@ func dbRequestToAPI(dbRequest *ent.Request) *oapi.Request {
 	if dbRequest.Edges.Service != nil {
 		request.Service = *dbServiceToAPI(dbRequest.Edges.Service)
 	}
-	if dbRequest.Edges.Reviews != nil {
-		for _, dbReview := range dbRequest.Edges.Reviews {
-			request.Reviews = append(request.Reviews, *dbReviewToAPI(dbReview))
-		}
+	for i, dbReview := range dbRequest.Edges.Reviews {
+		request.Reviews[i] = *dbReviewToAPI(dbReview)
+	}
+	for i, dbTrigger := range dbRequest.Edges.Triggers {
+		request.Triggers[i] = *dbTriggerToAPI(dbTrigger)
 	}
 	return &request
+}
+
+func dbTriggerToAPI(dbTrigger *ent.Trigger) *oapi.Trigger {
+	trigger := oapi.Trigger{
+		Id: dbTrigger.ID,
+	}
+	tasks := make([]oapi.Task, len(dbTrigger.Edges.Tasks))
+
+	for i, dbTask := range dbTrigger.Edges.Tasks {
+		tasks[i] = oapi.Task{
+			Id:     dbTask.ID,
+			Output: dbTask.Output,
+			Error:  dbTask.Error,
+		}
+	}
+	trigger.Tasks = tasks
+
+	return &trigger
 }

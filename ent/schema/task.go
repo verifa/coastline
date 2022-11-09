@@ -17,7 +17,7 @@ func (Task) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New),
-		field.Bytes("output"),
+		field.JSON("output", Object{}),
 		field.String("error"),
 	}
 }

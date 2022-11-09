@@ -517,10 +517,11 @@ components:
         - type: object
           required:
             - id
+            - createdBy
             - project
             - service
             - reviews
-            - createdBy
+            - triggers
           properties:
             id:
               type: string
@@ -538,6 +539,10 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/Review"
+            triggers:
+              type: array
+              items:
+                $ref: "#/components/schemas/Trigger"
     NewRequest:
       allOf:
         - $ref: "#/components/schemas/RequestCommon"
@@ -619,7 +624,45 @@ components:
         type:
           type: string
           enum: ["user", "auto"]
+    #
+    # Trigger types
+    #
+    Trigger:
+      required:
+        - id
+        - tasks
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+          x-go-type-import:
+            path: github.com/google/uuid
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Task"
+    Task:
+      type: object
+      required:
+        - id
+        - output
+        - error
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+          x-go-type-import:
+            path: github.com/google/uuid
+        output:
+          type: object
+        error:
+          type: string
 
+    #
+    # User types
+    #
     User:
       type: object
       required:

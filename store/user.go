@@ -14,10 +14,8 @@ func (s *Store) getEntUser(user *oapi.User) (*ent.User, error) {
 
 func dbUserToAPI(dbUser *ent.User) *oapi.User {
 	dbGroups := make([]string, len(dbUser.Edges.Groups))
-	if dbUser.Edges.Groups != nil {
-		for i, entGroup := range dbUser.Edges.Groups {
-			dbGroups[i] = entGroup.Name
-		}
+	for i, entGroup := range dbUser.Edges.Groups {
+		dbGroups[i] = entGroup.Name
 	}
 
 	return &oapi.User{

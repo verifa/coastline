@@ -28,6 +28,14 @@ type ContextKey string
 
 var contextKey ContextKey = "AUTH_CONTEXT"
 
+var devUser = claimsToUser(&session.UserClaims{
+	Sub:    "dev",
+	Iss:    "dev",
+	Email:  "dev@localhost",
+	Name:   "dev",
+	Groups: []string{"admin", "dev"},
+})
+
 func newAuthProvider(ctx context.Context, store *store.Store, config AuthConfig, devMode bool) (*authProvider, error) {
 	police := NewPolicyEngine()
 
@@ -81,6 +89,13 @@ type authProvider struct {
 
 func (p authProvider) authenticateMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if p.devMode {
+			ctx := context.WithValue(r.Context(), contextKey, devUser)
+			r = r.WithContext(ctx)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
+		}
 		sessionID, err := getSessionCookie(r)
 		if err != nil {
 			http.Error(w, "getting session cookie: "+err.Error(), http.StatusUnauthorized)
@@ -123,13 +138,7 @@ func (p authProvider) handleLogin(w http.ResponseWriter, r *http.Request) {
 	state := uuid.New().String()
 	nonce := uuid.New().String()
 	if p.devMode {
-		sessionID, err := p.store.NewSession(claimsToUser(&session.UserClaims{
-			Sub:    "dev",
-			Iss:    "dev",
-			Email:  "dev@localhost",
-			Name:   "dev",
-			Groups: []string{"admin", "dev"},
-		}))
+		sessionID, err := p.store.NewSession(devUser)
 		if err != nil {
 			http.Error(w, "Creating new session: "+err.Error(), http.StatusInternalServerError)
 		}

@@ -47,21 +47,25 @@ func (s *Store) natsSubscribe() error {
 func (s *Store) handleTaskResponse(msg *nats.Msg) {
 	var resp worker.ResponseMsg
 	if err := json.Unmarshal(msg.Data, &resp); err != nil {
-		log.Fatalln("unmarshalling task response: ", err.Error())
+		fmt.Println("Error: unmarshalling task response: ", err.Error())
 	}
 
 	fmt.Println("Resp error: ", resp.Error)
+	var output map[string]interface{}
+	if err := json.Unmarshal(resp.Output, &output); err != nil {
+		fmt.Println("Error: unmarshalling response output: ", err.Error())
+	}
 
 	dbTask, err := s.client.Task.Create().
 		SetTriggerID(resp.TriggerID).
-		SetOutput(resp.Output).
+		SetOutput(output).
 		SetError(resp.Error).
 		Save(s.ctx)
 	if err != nil {
 		log.Fatalln("saving task response: ", err.Error())
 	}
 
-	fmt.Printf("Saved task %s: %s\n", dbTask.ID.String(), string(dbTask.Output))
+	fmt.Printf("Saved task %s: %s\n", dbTask.ID.String(), dbTask.Output)
 }
 
 // IsNotFound returns a boolean indicating whether the error is a not found error.
