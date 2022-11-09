@@ -1,9 +1,17 @@
 <script lang="ts">
 	import Icon from '$lib/icons/Icon.svelte';
+	import type { components } from '$lib/oapi/gen/types';
 	import { getContext } from 'svelte';
 	import type { getRequestFunc } from '../request';
+
+	type Trigger = components['schemas']['Trigger'];
+
 	const getRequest: getRequestFunc = getContext('request');
 	const request = getRequest();
+
+	function isSuccessful(trigger: Trigger): boolean {
+		return trigger.tasks.filter((task) => task.error !== '').length === 0;
+	}
 </script>
 
 <div class="overflow-x-auto w-full">
@@ -19,7 +27,11 @@
 			{#each request.triggers as trigger}
 				<tr>
 					<th>
-						<Icon name="check-circle-solid" class="w-10 h-10 text-success" />
+						{#if isSuccessful(trigger)}
+							<Icon name="check-circle-solid" class="w-10 h-10 text-success" />
+						{:else}
+							<Icon name="x-circle-solid" class="w-10 h-10 text-error" />
+						{/if}
 					</th>
 					<td>{trigger.id}</td>
 					<th>
