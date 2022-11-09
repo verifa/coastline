@@ -19,7 +19,7 @@ func (Request) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New),
-		field.String("type").NotEmpty(),
+		field.String("kind").NotEmpty(),
 		field.Enum("status").Values("pending_approval", "rejected", "approved").Default("pending_approval"),
 		field.JSON("spec", RequestSpec{}),
 	}
@@ -31,6 +31,7 @@ func (Request) Edges() []ent.Edge {
 		edge.To("service", Service.Type).Required().Unique(),
 		edge.To("created_by", User.Type).Required().Unique(),
 		edge.From("reviews", Review.Type).Ref("request"),
+		edge.From("Triggers", Trigger.Type).Ref("Request"),
 	}
 }
 

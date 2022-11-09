@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import type { SchemaObject } from 'openapi-typescript';
-	import { getInitialPropValue, propFromSchema, type Property } from './spec';
+	import { propFromSchema, type Property } from './spec';
 	import InputField from './RequestFieldInput.svelte';
 	import RequestObjectForm from './RequestObjectForm.svelte';
 	import FieldKey from './RequestFieldKey.svelte';

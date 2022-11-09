@@ -500,11 +500,11 @@ components:
     RequestCommon:
       type: object
       required:
-        - type
+        - kind
         - status
         - spec
       properties:
-        type:
+        kind:
           type: string
         status:
           type: string
@@ -575,9 +575,9 @@ components:
     RequestTemplate:
       type: object
       required:
-        - type
+        - kind
       properties:
-        type:
+        kind:
           type: string
     RequestTemplatesResp:
       type: object

@@ -27,7 +27,7 @@
 	const requestStore = writable<NewRequest>({
 		project_id: '',
 		service_id: '',
-		type: '',
+		kind: '',
 		status: 'pending_approval',
 		spec: {}
 	});
@@ -66,7 +66,7 @@
 	}
 
 	function handleRequestTemplateChange() {
-		templateSpecStore.get(`/templates/${$requestStore.type}/openapi`);
+		templateSpecStore.get(`/templates/${$requestStore.kind}/openapi`);
 	}
 
 	function handleSubmit() {
@@ -139,12 +139,12 @@
 				<select
 					id="request"
 					class="select select-bordered"
-					bind:value={$requestStore.type}
+					bind:value={$requestStore.kind}
 					on:change={handleRequestTemplateChange}
 				>
 					<option disabled selected value={undefined}>Select request</option>
 					{#each $requestTemplatesStore.data.templates as template}
-						<option value={template.type}>{template.type}</option>
+						<option value={template.kind}>{template.kind}</option>
 					{/each}
 				</select>
 			</div>

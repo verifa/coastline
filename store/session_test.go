@@ -12,7 +12,7 @@ import (
 
 func TestGroup(t *testing.T) {
 	ctx := context.TODO()
-	store, err := New(ctx, &Config{})
+	store, err := New(ctx, &defaultTestConfig)
 	require.NoError(t, err)
 
 	testGroups := []string{"user", "admin", "team"}
@@ -32,7 +32,7 @@ func TestGroup(t *testing.T) {
 
 func TestSession(t *testing.T) {
 	ctx := context.TODO()
-	store, err := New(ctx, &Config{})
+	store, err := New(ctx, &defaultTestConfig)
 	require.NoError(t, err)
 
 	dummyUser := &oapi.User{
@@ -91,9 +91,9 @@ func TestSession(t *testing.T) {
 
 func TestSessionExpired(t *testing.T) {
 	ctx := context.TODO()
-	store, err := New(ctx, &Config{
-		SessionDuration: time.Second,
-	})
+	config := defaultTestConfig
+	config.SessionDuration = time.Second
+	store, err := New(ctx, &config)
 	require.NoError(t, err)
 
 	dummyUser := &oapi.User{

@@ -11,11 +11,12 @@ fe-dev:
 .PHONY: fe-build
 fe-build:
 	cd ui && \
+	npm install && \
 	npm run build
 
 .PHONY: be-dev
 be-dev:
-	go run main.go server --dev --templates ./examples/basic
+	go run main.go server --dev --cue-dir ./examples/basic
 
 .PHONY: be-gen
 be-gen:

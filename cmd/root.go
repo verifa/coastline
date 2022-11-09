@@ -19,10 +19,15 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/spf13/cobra"
+	"github.com/verifa/coastline/requests"
 )
 
-var configFiles []string
+var (
+	configFiles    []string
+	requestsConfig requests.Config
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -37,6 +42,7 @@ to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
+	SilenceUsage: true,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -50,6 +56,11 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
+	envErr := envconfig.Process("CL", &requestsConfig)
+	cobra.CheckErr(envErr)
+
+	rootCmd.PersistentFlags().StringVarP(&requestsConfig.Dir, "cue-dir", "C", requestsConfig.Dir, "Directory to load cue module from")
+	rootCmd.PersistentFlags().StringArrayVar(&requestsConfig.Args, "cue-args", requestsConfig.Args, "Arguments to pass to cue load")
 	rootCmd.PersistentFlags().StringSliceVar(&configFiles, "config", nil, "config files to parse")
 }
 
