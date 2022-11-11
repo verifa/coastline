@@ -658,7 +658,7 @@ components:
     Trigger:
       required:
         - id
-        - tasks
+        - workflows
       properties:
         id:
           type: string
@@ -666,11 +666,11 @@ components:
           x-go-type: uuid.UUID
           x-go-type-import:
             path: github.com/google/uuid
-        tasks:
+        workflows:
           type: array
           items:
-            $ref: "#/components/schemas/Task"
-    Task:
+            $ref: "#/components/schemas/Workflow"
+    Workflow:
       type: object
       required:
         - id

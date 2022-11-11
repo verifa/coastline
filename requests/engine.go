@@ -41,9 +41,9 @@ func Load(config *Config) (*Engine, error) {
 	if err != nil {
 		return nil, fmt.Errorf("getting templates: %w", err)
 	}
-	tasks, err := getTasks(value)
+	workflows, err := getWorkflows(value)
 	if err != nil {
-		return nil, fmt.Errorf("getting tasks: %w", err)
+		return nil, fmt.Errorf("getting workflows: %w", err)
 	}
 	codec := gocodec.New((*cue.Runtime)(cuectx), nil)
 
@@ -51,19 +51,19 @@ func Load(config *Config) (*Engine, error) {
 		cuectx:    cuectx,
 		templates: templates,
 		codec:     codec,
-		tasks:     tasks,
-		// value:     value,
+		workflows: workflows,
+		value:     value,
 	}, nil
 }
 
 // Engine is responsible for storing all the templates, validating incoming
-// requests, serving OpenAPI specifications, and running worker cue-based tasks
+// requests, serving OpenAPI specifications, and running worker cue-based workflows
 type Engine struct {
 	cuectx    *cue.Context
 	codec     *gocodec.Codec
 	templates []*Template
-	tasks     []cue.Value
-	// value     cue.Value
+	workflows []cue.Value
+	value     cue.Value
 }
 
 func (e *Engine) Validate(input oapi.NewRequest) error {

@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	subjectTriggerRun   = "trigger.run"
-	subjectTaskResponse = "task.response"
-	queueWorker         = "worker"
+	subjectTriggerRun       = "trigger.run"
+	subjectWorkflowResponse = "workflow.response"
+	queueWorker             = "worker"
 )
 
 type Config struct{}
@@ -75,35 +75,30 @@ func (w *worker) handleTrigger(msg *TriggerMsg) error {
 		resp.Error = "request is nil"
 		return w.publishResponse(&resp)
 	}
-	tasks, err := w.engine.GetTasksForRequest(msg.Request)
+	wfPaths, err := w.engine.GetWorkflowsForRequest(msg.Request)
 	if err != nil {
-		resp.Error = fmt.Sprintf("getting tasks for request: %s", err.Error())
+		resp.Error = fmt.Sprintf("getting workflows for request: %s", err.Error())
 		return w.publishResponse(&resp)
 	}
-	if len(tasks) == 0 {
-		resp.Error = "no tasks found"
+	if len(wfPaths) == 0 {
+		resp.Error = "no workflows found"
 		return w.publishResponse(&resp)
 	}
 
-	runner := requests.NewRunner(msg.Request)
-
-	// Loop through tasks and run them, publishing results for each.
+	// Loop through workflows and run them, publishing results for each.
 	// TODO: should we catch errors from publishing response and return those as at the end?
-	for _, task := range tasks {
-		taskName, ok := task.Label()
-		if !ok {
-			continue
-		}
-		resp.Task = taskName
-		output, err := runner.RunTask(task)
+	for _, path := range wfPaths {
+		endPath := path.Selectors()[len(path.Selectors())-1]
+		resp.Workflow = endPath.String()
+		output, err := w.engine.RunWorkflow(path, msg.Request)
 		if err != nil {
-			resp.Error = fmt.Sprintf("running task: %s", err.Error())
+			resp.Error = fmt.Sprintf("running workflow: %s", err.Error())
 			w.publishResponse(&resp)
 			continue
 		}
 
 		if err := output.Validate(cue.Concrete(true)); err != nil {
-			resp.Error = fmt.Sprintf("Output invalid: %s", err.Error())
+			resp.Error = fmt.Sprintf("error validating output: %s", err.Error())
 			w.publishResponse(&resp)
 			continue
 		}
@@ -131,5 +126,5 @@ func (w *worker) publishResponse(resp *ResponseMsg) error {
 			Error:     fmt.Sprintf("Error: marshalling response: %s", err.Error()),
 		})
 	}
-	return w.nc.Publish(subjectTaskResponse, respBytes)
+	return w.nc.Publish(subjectWorkflowResponse, respBytes)
 }

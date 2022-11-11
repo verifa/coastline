@@ -1,4 +1,10 @@
-package templates
+package testdata
+
+import (
+	"encoding/json"
+	
+	"github.com/verifa/coastline/tasks/http"
+)
 
 #T1: {
 	kind: "t1"
@@ -15,10 +21,12 @@ package templates
 	}
 }
 
-task: t1: {
+workflow: t1: {
 	input: #T1
 
-	output: {
-		key: input.spec.name
+	step: api: http.Get & {
+		url: "https://catfact.ninja/fact"
 	}
+
+	output: json.Unmarshal(step.api.response.body).fact
 }

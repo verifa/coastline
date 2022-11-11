@@ -10,31 +10,37 @@ import (
 	cuejson "cuelang.org/go/encoding/json"
 	"cuelang.org/go/tools/flow"
 	"github.com/verifa/coastline/server/oapi"
+	"github.com/verifa/coastline/tasks"
 )
 
-func NewRunner(req *oapi.Request) *runner {
-	return &runner{
-		req: req,
+// RunWorkflow takes a cue path to a workflow and a request and runs the workflow at
+// the given path, replacing the input with the spec from the given request
+func (e *Engine) RunWorkflow(wfPath cue.Path, req *oapi.Request) (cue.Value, error) {
+	r := runner{
+		path: wfPath,
+		req:  req,
 	}
-}
-
-type runner struct {
-	req *oapi.Request
-}
-
-func (r *runner) RunTask(v cue.Value) (cue.Value, error) {
-	if !isTask(v) {
-		return cue.Value{}, fmt.Errorf("value is not task")
+	wf := e.value.LookupPath(wfPath)
+	if !wf.Exists() {
+		return cue.Value{}, fmt.Errorf("workflow does not exist")
+	} else if !isWorkflow(wf) {
+		// TODO: we could be a bit more descriptive here
+		return cue.Value{}, fmt.Errorf("workflow exists but is not valid")
 	}
-	fmt.Println("RUNNING TASK: ", v.Path().String())
-	controller := flow.New(&flow.Config{}, v, r.taskFunc)
+
+	fmt.Println("Running workflow: ", wfPath)
+	controller := flow.New(&flow.Config{
+		Root:           wfPath,
+		IgnoreConcrete: true,
+	}, e.value, r.workflowFunc)
 	err := controller.Run(context.Background())
 	if err != nil {
-		return cue.Value{}, fmt.Errorf("running task: %w", err)
+		return cue.Value{}, fmt.Errorf("running workflow: %w", err)
 	}
 	// Get final result and output
 	result := controller.Value()
-	outputPath := cue.ParsePath("output")
+	outputSel := cue.ParsePath("output").Selectors()[0]
+	outputPath := cue.MakePath(append(wfPath.Selectors(), outputSel)...)
 	output := result.LookupPath(outputPath)
 	// If output doesn't exist return an empty value
 	if !output.Exists() {
@@ -44,50 +50,66 @@ func (r *runner) RunTask(v cue.Value) (cue.Value, error) {
 	return output, nil
 }
 
-func (r *runner) taskFunc(v cue.Value) (flow.Runner, error) {
-	if isTaskInput(v) {
-		return flow.RunnerFunc(func(t *flow.Task) error {
-			// Converting from JSON to Go is troublesome because of numbers.
-			// Are they floats, or int8, 16, uint16, etc.
-			// Cue's JSON package can be used to build a CUE value, so let's use that
-			// instead.
-			// First re-create JSON from the request spec
-			specBytes, err := json.Marshal(r.req.Spec)
-			if err != nil {
-				return fmt.Errorf("marshalling request spec: %w", err)
-			}
+type runner struct {
+	path cue.Path
+	req  *oapi.Request
+}
 
-			// Validate the JSON spec against the spec value from the input request
-			specVal := t.Value().LookupPath(cue.ParsePath("spec"))
-			if !specVal.Exists() {
-				return fmt.Errorf("spec does not exist in input")
-			}
-			if err := cuejson.Validate(specBytes, specVal); err != nil {
-				return fmt.Errorf("spec is not valid: %w", err)
-			}
-			expr, err := cuejson.Extract("", specBytes)
-			if err != nil {
-				return fmt.Errorf("extracting cue value from json: %w", err)
-			}
-
-			v := cuecontext.New().BuildExpr(expr)
-			return t.Fill(map[string]interface{}{
-				"spec": v,
-			})
-		}), nil
+func (r *runner) workflowFunc(v cue.Value) (flow.Runner, error) {
+	if isWorkflowInput(v) {
+		it := inputTask{
+			req: r.req,
+		}
+		return &it, nil
 	}
-	// Skip all values that are not tasks
-	if isBuiltinTask(v) {
-		return flow.RunnerFunc(func(t *flow.Task) error {
-			// How can I run this builtin task from here ??
-			// E.g. https://pkg.go.dev/cuelang.org/go/pkg/tool
-			return nil
-		}), nil
+	// Handle Coastline tasks
+	if taskID, ok := tasks.TaskID(v); ok {
+		ct := tasks.Task{
+			ID: taskID,
+		}
+		return ct, nil
 	}
 	return nil, nil
 }
 
-func isTaskInput(v cue.Value) bool {
+var _ flow.Runner = (*inputTask)(nil)
+
+type inputTask struct {
+	req *oapi.Request
+}
+
+// Tasks must implement a Run func, this is where we execute our task
+func (it inputTask) Run(t *flow.Task, pErr error) error {
+	// Converting from JSON to Go is troublesome because of numbers.
+	// Are they floats, or int8, 16, uint16, etc.
+	// Cue's JSON package can be used to build a CUE value, so let's use that
+	// instead.
+	// First re-create JSON from the request spec
+	specBytes, err := json.Marshal(it.req.Spec)
+	if err != nil {
+		return fmt.Errorf("marshalling request spec: %w", err)
+	}
+
+	// Validate the JSON spec against the spec value from the input request
+	specVal := t.Value().LookupPath(cue.ParsePath("spec"))
+	if !specVal.Exists() {
+		return fmt.Errorf("spec does not exist in input")
+	}
+	if err := cuejson.Validate(specBytes, specVal); err != nil {
+		return fmt.Errorf("spec is not valid: %w", err)
+	}
+	expr, err := cuejson.Extract("", specBytes)
+	if err != nil {
+		return fmt.Errorf("extracting cue value from json: %w", err)
+	}
+
+	v := cuecontext.New().BuildExpr(expr)
+	return t.Fill(map[string]interface{}{
+		"spec": v,
+	})
+}
+
+func isWorkflowInput(v cue.Value) bool {
 	// TODO: should this be stricter at checking?
 	// pathSelectors := v.Path().Selectors()
 	// curSelector := pathSelectors[len(pathSelectors)-1]
@@ -98,16 +120,6 @@ func isTaskInput(v cue.Value) bool {
 		return false
 	}
 	if v.LookupPath(cue.ParsePath("kind")).Exists() {
-		return true
-	}
-	return false
-}
-
-func isBuiltinTask(v cue.Value) bool {
-	if v.Kind() != cue.StructKind {
-		return false
-	}
-	if v.LookupPath(cue.ParsePath("$id")).Exists() {
 		return true
 	}
 	return false

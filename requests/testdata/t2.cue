@@ -1,4 +1,4 @@
-package templates
+package testdata
 
 #T2: {
 	kind: "t2"
@@ -15,7 +15,7 @@ package templates
 	}
 }
 
-task: t2: {
+workflow: t2: {
 	input: #T2
 
 	output: {

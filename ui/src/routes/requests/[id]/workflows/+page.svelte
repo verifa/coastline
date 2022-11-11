@@ -10,9 +10,10 @@
 	const getRequest: getRequestFunc = getContext('request');
 	const request = getRequest();
 
-	function isSuccessful(trigger: Trigger): boolean {
-		return trigger.workflows.filter((workflow) => workflow.error !== '').length === 0;
-	}
+	const workflows = request.triggers.reduce((prev: Workflow[], cur: Trigger) => {
+		prev.push(...cur.workflows);
+		return prev;
+	}, []);
 </script>
 
 <div class="overflow-x-auto w-full">
@@ -25,19 +26,23 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each request.triggers as trigger}
+			{#each workflows as workflow}
 				<tr>
 					<th>
-						{#if isSuccessful(trigger)}
+						{#if workflow.error === ''}
 							<Icon name="check-circle-solid" class="w-10 h-10 text-success" />
 						{:else}
 							<Icon name="x-circle-solid" class="w-10 h-10 text-error" />
 						{/if}
 					</th>
-					<td>{trigger.id}</td>
-					<th>
-						<button class="btn btn-ghost btn-xs">details</button>
-					</th>
+					<td>{workflow.id}</td>
+					<td>
+						{#if workflow.error === ''}
+							{JSON.stringify(workflow.output, undefined, 2)}
+						{:else}
+							Error: {workflow.error}
+						{/if}
+					</td>
 				</tr>
 			{/each}
 		</tbody>

@@ -48,16 +48,16 @@ func dbTriggerToAPI(dbTrigger *ent.Trigger) *oapi.Trigger {
 	trigger := oapi.Trigger{
 		Id: dbTrigger.ID,
 	}
-	tasks := make([]oapi.Task, len(dbTrigger.Edges.Tasks))
+	workflows := make([]oapi.Workflow, len(dbTrigger.Edges.Workflows))
 
-	for i, dbTask := range dbTrigger.Edges.Tasks {
-		tasks[i] = oapi.Task{
-			Id:     dbTask.ID,
-			Output: dbTask.Output,
-			Error:  dbTask.Error,
+	for i, dbWorkflow := range dbTrigger.Edges.Workflows {
+		workflows[i] = oapi.Workflow{
+			Id:     dbWorkflow.ID,
+			Output: dbWorkflow.Output,
+			Error:  dbWorkflow.Error,
 		}
 	}
-	trigger.Tasks = tasks
+	trigger.Workflows = workflows
 
 	return &trigger
 }
