@@ -14,7 +14,7 @@ type TriggerMsg struct {
 
 type ResponseMsg struct {
 	TriggerID uuid.UUID       `json:"trigger_id"`
-	Task      string          `json:"task"`
+	Workflow  string          `json:"workflow"`
 	Error     string          `json:"error,omitempty"`
 	Output    json.RawMessage `json:"output"`
 }

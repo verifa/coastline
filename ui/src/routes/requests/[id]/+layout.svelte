@@ -56,6 +56,10 @@
 				url: `${baseUrl}/events`
 			},
 			{
+				name: 'Workflows',
+				url: `${baseUrl}/workflows`
+			},
+			{
 				name: 'Triggers',
 				url: `${baseUrl}/triggers`
 			}

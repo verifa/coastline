@@ -16,7 +16,7 @@ func (s *Store) QueryRequests(ps ...predicate.Request) (*oapi.RequestsResp, erro
 		WithService().
 		WithReviews().
 		WithTriggers(func(tq *ent.TriggerQuery) {
-			tq.WithTasks()
+			tq.WithWorkflows()
 		}).
 		All(s.ctx)
 	if err != nil {

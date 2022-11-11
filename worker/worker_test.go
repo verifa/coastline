@@ -39,10 +39,12 @@ func TestWorker(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
+		name      string
 		req       oapi.Request
 		expectErr bool
 	}{
 		{
+			name: "t1-success",
 			req: oapi.Request{
 				Kind: "t1",
 				Spec: map[string]interface{}{
@@ -51,6 +53,7 @@ func TestWorker(t *testing.T) {
 			},
 		},
 		{
+			name: "t1-error",
 			req: oapi.Request{
 				Kind: "t1",
 				Spec: map[string]interface{}{
@@ -60,15 +63,44 @@ func TestWorker(t *testing.T) {
 			},
 			expectErr: true,
 		},
+		{
+			name: "CatFact",
+			req: oapi.Request{
+				Kind: "CatFact",
+				Spec: map[string]interface{}{
+					"maxLength": 100,
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name: "VaultAdminAccess",
+			req: oapi.Request{
+				Kind: "VaultAdminAccess",
+				Spec: map[string]interface{}{
+					"path": "asd",
+					"role": "some-role",
+				},
+			},
+			expectErr: false,
+		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.req.Kind, func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			done := make(chan struct{})
 
-			sub, err := nc.Subscribe(subjectTaskResponse, func(msg *nats.Msg) {
-				// This currently doesn't handle multiple tasks, i.e. if we receive multiple
-				// messages because there are multiple tasks for a request, then we cannot
+			sub, err := nc.Subscribe(subjectWorkflowResponse, func(msg *nats.Msg) {
+				var resp ResponseMsg
+				err := json.Unmarshal(msg.Data, &resp)
+				require.NoError(t, err)
+				if tt.expectErr {
+					assert.NotEmpty(t, resp.Error)
+				} else {
+					assert.Empty(t, resp.Error)
+				}
+				// This currently doesn't handle multiple workflows, i.e. if we receive multiple
+				// messages because there are multiple workflows for a request, then we cannot
 				// double-close a channel and will panic!
 				close(done)
 			})

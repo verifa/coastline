@@ -9,11 +9,11 @@ import (
 	"github.com/google/uuid"
 )
 
-type Task struct {
+type Workflow struct {
 	ent.Schema
 }
 
-func (Task) Fields() []ent.Field {
+func (Workflow) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New),
@@ -22,20 +22,20 @@ func (Task) Fields() []ent.Field {
 	}
 }
 
-func (Task) Edges() []ent.Edge {
+func (Workflow) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("Trigger", Trigger.Type).Unique().Required(),
 	}
 }
 
-func (Task) Indexes() []ent.Index {
+func (Workflow) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("id").
 			Unique(),
 	}
 }
 
-func (Task) Mixin() []ent.Mixin {
+func (Workflow) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		mixin.Time{},
 	}

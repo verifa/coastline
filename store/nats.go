@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	subjectTriggerRun   = "trigger.run"
-	subjectTaskResponse = "task.response"
-	queueServer         = "server"
+	subjectTriggerRun       = "trigger.run"
+	subjectWorkflowResponse = "workflow.response"
+	queueServer             = "server"
 )
 
 func setupNATS() (*nats.Conn, error) {
@@ -31,8 +31,8 @@ func (s *Store) natsSubscribe() error {
 		handler nats.MsgHandler
 	}{
 		{
-			subj:    subjectTaskResponse,
-			handler: s.handleTaskResponse,
+			subj:    subjectWorkflowResponse,
+			handler: s.handleWorkflowResponse,
 		},
 	}
 	for _, sub := range subs {
@@ -44,10 +44,10 @@ func (s *Store) natsSubscribe() error {
 	return nil
 }
 
-func (s *Store) handleTaskResponse(msg *nats.Msg) {
+func (s *Store) handleWorkflowResponse(msg *nats.Msg) {
 	var resp worker.ResponseMsg
 	if err := json.Unmarshal(msg.Data, &resp); err != nil {
-		fmt.Println("Error: unmarshalling task response: ", err.Error())
+		fmt.Println("Error: unmarshalling workflow response: ", err.Error())
 	}
 
 	fmt.Println("Resp error: ", resp.Error)
@@ -56,23 +56,14 @@ func (s *Store) handleTaskResponse(msg *nats.Msg) {
 		fmt.Println("Error: unmarshalling response output: ", err.Error())
 	}
 
-	dbTask, err := s.client.Task.Create().
+	dbWorkflow, err := s.client.Workflow.Create().
 		SetTriggerID(resp.TriggerID).
 		SetOutput(output).
 		SetError(resp.Error).
 		Save(s.ctx)
 	if err != nil {
-		log.Fatalln("saving task response: ", err.Error())
+		log.Fatalln("saving workflow response: ", err.Error())
 	}
 
-	fmt.Printf("Saved task %s: %s\n", dbTask.ID.String(), dbTask.Output)
+	fmt.Printf("Saved workflow %s: %s\n", dbWorkflow.ID.String(), dbWorkflow.Output)
 }
-
-// IsNotFound returns a boolean indicating whether the error is a not found error.
-// func IsNotFound(err error) bool {
-// 	if err == nil {
-// 		return false
-// 	}
-// 	var e *NotFoundError
-// 	return errors.As(err, &e)
-// }

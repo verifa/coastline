@@ -23,7 +23,7 @@ func (Trigger) Fields() []ent.Field {
 func (Trigger) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("Request", Request.Type).Unique().Required(),
-		edge.From("Tasks", Task.Type).Ref("Trigger"),
+		edge.From("Workflows", Workflow.Type).Ref("Trigger"),
 	}
 }
 
