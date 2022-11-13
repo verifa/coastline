@@ -15,7 +15,7 @@ package basic
 	}
 }
 
-task: jenkinsServer: {
+workflow: jenkinsServer: {
 	input: #JenkinsServerRequest
 
 	output: {

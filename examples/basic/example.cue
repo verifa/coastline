@@ -9,7 +9,7 @@ import "tool/http"
 	}
 }
 
-task: example: {
+workflow: example: {
 	input: #ExampleRequest
 
 	step: restAPI: http.Get & {
