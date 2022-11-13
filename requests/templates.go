@@ -12,27 +12,39 @@ type Template struct {
 	Value cue.Value
 }
 
+type ServiceDef struct {
+	Name string `json:"name"`
+}
+
 // TemplateDef defines the fields of a CUE-based Template for decoding
 // and identifying which definitions in CUE are Request Templates
 type TemplateDef struct {
-	Kind    string `json:"kind"`
-	Service struct {
-		Selector struct {
-			MatchLabels map[string]string `json:"matchLabels"`
-		} `json:"selector"`
-	} `json:"service"`
+	Kind     string       `json:"kind"`
+	Services []ServiceDef `json:"services"`
+	// Service struct {
+	// 	Selector struct {
+	// 		MatchLabels map[string]string `json:"matchLabels"`
+	// 	} `json:"selector"`
+	// } `json:"service"`
 }
 
 func (e *Engine) TemplatesForService(service *oapi.Service) []*Template {
 	var templates []*Template
 	for _, tmpl := range e.templates {
-		for key, reqLabel := range tmpl.Def.Service.Selector.MatchLabels {
-			serviceLabel, ok := service.Labels.Get(key)
-			if ok && serviceLabel == reqLabel {
+		for _, svc := range tmpl.Def.Services {
+			if svc.Name == service.Name {
 				templates = append(templates, tmpl)
 			}
 		}
 	}
+	// for _, tmpl := range e.templates {
+	// 	for key, reqLabel := range tmpl.Def.Service.Selector.MatchLabels {
+	// 		serviceLabel, ok := service.Labels.Get(key)
+	// 		if ok && serviceLabel == reqLabel {
+	// 			templates = append(templates, tmpl)
+	// 		}
+	// 	}
+	// }
 	return templates
 }
 
@@ -49,28 +61,33 @@ func (e *Engine) templateByKind(kind string) (cue.Value, error) {
 
 // getTemplates gets the request templates from the parsed cue files
 func getTemplates(value cue.Value) ([]*Template, error) {
+	templatesPath := cue.ParsePath("request")
+	templatesVal := value.LookupPath(templatesPath)
+	if !templatesVal.Exists() {
+		return nil, nil
+	}
 	var templates []*Template
-	iter, err := value.Fields(cue.Definitions(true))
+	iter, err := templatesVal.Fields(cue.Definitions(true))
 	if err != nil {
 		return nil, fmt.Errorf("getting fields from cue value: %w", err)
 	}
 	kindPath := cue.ParsePath("kind")
 	for iter.Next() {
-		val := iter.Value()
+		tmplVal := iter.Value()
 		// Get the type value
-		value := val.LookupPath(kindPath)
-		if !value.Exists() {
+		kindVal := tmplVal.LookupPath(kindPath)
+		if !kindVal.Exists() {
 			continue
 		}
 		var def TemplateDef
-		if err := val.Decode(&def); err != nil {
+		if err := tmplVal.Decode(&def); err != nil {
 			// Ignore errors, for now, and continue
 			continue
 		}
 		if def.Kind != "" {
 			templates = append(templates, &Template{
 				Def:   def,
-				Value: val,
+				Value: tmplVal,
 			})
 		}
 	}

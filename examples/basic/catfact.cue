@@ -2,18 +2,17 @@ package basic
 
 import (
 	"encoding/json"
+	
 	"github.com/verifa/coastline/tasks/http"
 )
 
-#CatFact: {
+service: #CatFact: {
+	name: "CatFact"
+}
+
+request: #CatFact: {
 	kind: "CatFact"
-	service: {
-		selector: {
-			matchLabels: {
-				tool: "catfact"
-			}
-		}
-	}
+	services: [service.#CatFact]
 	spec: {
 		// Max length of cat fact
 		maxLength: int | *100
@@ -21,18 +20,21 @@ import (
 }
 
 workflow: CatFact: {
-	input: #CatFact
+	input: request.#CatFact
 
 	step: api: http.Get & {
 		url: "https://catfact.ninja/fact"
-        request: {
-            params: {
-                max_length: "\(input.spec.maxLength)"
-            }
-        }
+		request: {
+			params: {
+				max_length: "\(input.spec.maxLength)"
+			}
+		}
+	}
+	step: another: {
+		max_length: input.spec.maxLength
 	}
 
 	output: {
-        fact: json.Unmarshal(step.api.response.body).fact
-    }
+		fact: json.Unmarshal(step.api.response.body).fact
+	}
 }

@@ -20,7 +20,7 @@
 
 	const projectStore = createHttpStore<ProjectsResp>();
 	const serviceStore = createHttpStore<ServicesResp>();
-	const requestTemplatesStore = createHttpStore<RequestTemplatesResp>();
+	const templatesStore = createHttpStore<RequestTemplatesResp>();
 	const templateSpecStore = createHttpStore<OpenAPI3>();
 	const requestsSubmitStore = createHttpStore<Request>();
 
@@ -59,10 +59,11 @@
 
 	function handleProjectChange() {
 		serviceStore.get('/services');
+		templatesStore.get(`/services/${$requestStore.service_id}/templates`);
 	}
 
 	function handleServiceChange() {
-		requestTemplatesStore.get(`/services/${$requestStore.service_id}/templates`);
+		templatesStore.get(`/services/${$requestStore.service_id}/templates`);
 	}
 
 	function handleRequestTemplateChange() {
@@ -129,9 +130,9 @@
 			</div>
 		{/if}
 
-		{#if $requestTemplatesStore.fetching}
+		{#if $templatesStore.fetching}
 			<h2>Loading</h2>
-		{:else if $requestTemplatesStore.ok && $requestTemplatesStore.data}
+		{:else if $templatesStore.ok && $templatesStore.data}
 			<div class="form-control w-full max-w-xs">
 				<label for="request" class="label">
 					<span class="label-text">Request</span>
@@ -143,7 +144,7 @@
 					on:change={handleRequestTemplateChange}
 				>
 					<option disabled selected value={undefined}>Select request</option>
-					{#each $requestTemplatesStore.data.templates as template}
+					{#each $templatesStore.data.templates as template}
 						<option value={template.kind}>{template.kind}</option>
 					{/each}
 				</select>

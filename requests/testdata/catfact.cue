@@ -6,15 +6,13 @@ import (
 	"github.com/verifa/coastline/tasks/http"
 )
 
-#CatFact: {
+service: #CatFact: {
+	name: "CatFact"
+}
+
+request: #CatFact: {
 	kind: "CatFact"
-	service: {
-		selector: {
-			matchLabels: {
-				tool: "catfact"
-			}
-		}
-	}
+	services: [service.#CatFact]
 	spec: {
 		// Max length of cat fact
 		maxLength: int | *100
@@ -22,7 +20,7 @@ import (
 }
 
 workflow: CatFact: {
-	input: #CatFact
+	input: request.#CatFact
 
 	step: api: http.Get & {
 		url: "https://catfact.ninja/fact"

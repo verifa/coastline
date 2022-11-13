@@ -10,10 +10,11 @@ import (
 )
 
 func (s *ServerImpl) GetServices(w http.ResponseWriter, r *http.Request, params oapi.GetServicesParams) {
-	resp, err := s.store.QueryServices()
-	if err != nil {
-		http.Error(w, "Querying services: "+err.Error(), http.StatusInternalServerError)
-	}
+	resp := s.engine.GetServices()
+	// resp, err := s.store.QueryServices()
+	// if err != nil {
+	// 	http.Error(w, "Querying services: "+err.Error(), http.StatusInternalServerError)
+	// }
 	returnJSON(w, resp)
 }
 
