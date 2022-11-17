@@ -13,8 +13,9 @@ import (
 )
 
 type Config struct {
-	Args []string
-	Dir  string
+	Args      []string
+	Dir       string
+	IsTesting bool
 }
 
 func Load(config *Config) (*Engine, error) {
@@ -23,7 +24,8 @@ func Load(config *Config) (*Engine, error) {
 	}
 	cuectx := cuecontext.New()
 	buildInstances := load.Instances(config.Args, &load.Config{
-		Dir: config.Dir,
+		Dir:   config.Dir,
+		Tests: config.IsTesting,
 	})
 	if len(buildInstances) != 1 {
 		return nil, fmt.Errorf("expecting only 1 build instance, got %d", len(buildInstances))
