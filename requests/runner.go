@@ -16,7 +16,7 @@ import (
 // RunWorkflow takes a cue path to a workflow and a request and runs the workflow at
 // the given path, replacing the input with the spec from the given request
 func (e *Engine) RunWorkflow(wfPath cue.Path, req *oapi.Request) (cue.Value, error) {
-	r := runner{
+	r := workflowRunner{
 		path: wfPath,
 		req:  req,
 	}
@@ -50,12 +50,12 @@ func (e *Engine) RunWorkflow(wfPath cue.Path, req *oapi.Request) (cue.Value, err
 	return output, nil
 }
 
-type runner struct {
+type workflowRunner struct {
 	path cue.Path
 	req  *oapi.Request
 }
 
-func (r *runner) workflowFunc(v cue.Value) (flow.Runner, error) {
+func (r *workflowRunner) workflowFunc(v cue.Value) (flow.Runner, error) {
 	if isWorkflowInput(v) {
 		it := inputTask{
 			req: r.req,
@@ -84,6 +84,9 @@ func (it inputTask) Run(t *flow.Task, pErr error) error {
 	// Are they floats, or int8, 16, uint16, etc.
 	// Cue's JSON package can be used to build a CUE value, so let's use that
 	// instead.
+	if it.req == nil {
+		return nil
+	}
 	// First re-create JSON from the request spec
 	specBytes, err := json.Marshal(it.req.Spec)
 	if err != nil {

@@ -7,11 +7,14 @@ require (
 	entgo.io/ent v0.11.4-0.20221001062602-1029a2d3ba2a
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/deepmap/oapi-codegen v1.11.0
+	github.com/fatih/color v1.13.0
 	github.com/getkin/kin-openapi v0.105.0
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/cors v1.2.1
+	github.com/go-chi/httplog v0.2.5
 	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.4.0
+	github.com/juju/ansiterm v1.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/nats-io/nats-server/v2 v2.9.5
 	github.com/nats-io/nats.go v1.19.0
@@ -32,7 +35,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/proto v1.10.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/go-chi/httplog v0.2.5 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/swag v0.21.1 // indirect
@@ -43,10 +45,10 @@ require (
 	github.com/hashicorp/hcl/v2 v2.13.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/invopop/yaml v0.1.0 // indirect
-	github.com/jlarfors/excuepkg v0.0.0-20221109142655-88910b6d7b89 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/klauspost/compress v1.15.11 // indirect
+	github.com/lunixbochs/vtclean v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
