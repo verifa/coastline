@@ -1,43 +1,44 @@
 package http
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"net/http"
 
 	"cuelang.org/go/tools/flow"
+	"github.com/verifa/coastline/tasks/helper"
 )
-
-type doConfig struct {
-	Method  string `json:"method"`
-	URL     string `json:"url"`
-	Request struct {
-		Body    []byte            `json:"body"`
-		Headers map[string]string `json:"headers"`
-		Params  map[string]string `json:"params"`
-	} `json:"request"`
-}
 
 var _ flow.Runner = (*DoTask)(nil)
 
 type DoTask struct{}
 
 func (t DoTask) Run(task *flow.Task, pErr error) error {
-	var config doConfig
-	if err := task.Value().Decode(&config); err != nil {
-		return fmt.Errorf("decoding task: %w", err)
+	th := helper.TaskHelper{
+		Task: task,
+	}
+
+	method := th.MustString("method")
+	url := th.MustString("url")
+	body, _ := th.Reader("request.body")
+
+	var params map[string]string
+	th.Decode("request.params", &params)
+
+	// Check if there were any errors with config before proceeding
+	if th.Errs != nil {
+		return th.Errs
 	}
 
 	client := http.Client{}
-	req, err := http.NewRequest(config.Method, config.URL, bytes.NewBuffer(config.Request.Body))
+	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return fmt.Errorf("creating request: %w", err)
 	}
 
-	if config.Request.Params != nil {
+	if params != nil {
 		q := req.URL.Query()
-		for key, value := range config.Request.Params {
+		for key, value := range params {
 			q.Add(key, value)
 		}
 		req.URL.RawQuery = q.Encode()

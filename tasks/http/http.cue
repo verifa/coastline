@@ -12,7 +12,7 @@ Do: {
 	url:    string
 
 	request: {
-		body?: bytes
+		body?: bytes | string
 		header: [string]:  string | [...string]
 		trailer: [string]: string | [...string]
 	}
