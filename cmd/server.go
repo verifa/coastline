@@ -18,6 +18,8 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
+	"net"
 	"net/http"
 
 	"github.com/kelseyhightower/envconfig"
@@ -44,9 +46,6 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.TODO()
-		if serverConfig.DevMode {
-			storeConfig.InitData = true
-		}
 
 		engine, err := requests.Load(&requestsConfig)
 		if err != nil {
@@ -73,7 +72,15 @@ to quickly create a Cobra application.`,
 			return fmt.Errorf("creating server: %w", err)
 		}
 
-		return http.ListenAndServe(":3000", srv)
+		addr := ":3000"
+		l, err := net.Listen("tcp", addr)
+		if err != nil {
+			return fmt.Errorf("listening at %s: %w", addr, err)
+		}
+
+		log.Println("Coastline listening on", addr)
+
+		return http.Serve(l, srv)
 	},
 }
 

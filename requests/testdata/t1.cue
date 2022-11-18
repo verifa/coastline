@@ -7,7 +7,8 @@ import (
 )
 
 request: #t1: {
-	kind: "t1"
+	kind:        "t1"
+	description: "t1: \(spec.name)"
 	serviceSelector: {
 		matchLabels: {
 			tool: "t1"

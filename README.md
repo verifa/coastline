@@ -30,7 +30,7 @@ The goal of Coastline is to automate simple tasks to provide better developer ex
 Below is a simple example request and workflow for requesting Cat Facts from: <https://catfact.ninja/>
 
 ```cue
-package basic
+package demo
 
 import (
  "encoding/json"
@@ -38,15 +38,12 @@ import (
  "github.com/verifa/coastline/tasks/http"
 )
 
-// CatFact defines a Request Template for users to make requests for,
-// and providing an optional maxLength for the cat fact they wish for
-#CatFact: {
- kind: "CatFact"
- service: {
-  selector: {
-   matchLabels: {
-    tool: "catfact"
-   }
+request: #CatFact: {
+ kind:        "CatFact"
+ description: "Cat fact max length \(spec.maxLength)"
+ serviceSelector: {
+  matchLabels: {
+   tool: "cat-facts"
   }
  }
  spec: {
@@ -55,10 +52,8 @@ import (
  }
 }
 
-// Define a workflow for the CatFact request which calls the Cat Fact
-// REST API to retrieve a random cat fact within the maxLength given
 workflow: CatFact: {
- input: #CatFact
+ input: request.#CatFact
 
  step: api: http.Get & {
   url: "https://catfact.ninja/fact"
@@ -73,7 +68,30 @@ workflow: CatFact: {
   fact: json.Unmarshal(step.api.response.body).fact
  }
 }
+```
 
+## Run dev server
+
+Coastline's server has a `--dev` mode which is intended for exploring Coastline without setting anything up.
+
+To give you a quick feel for Coastline, it comes packaged with some demo data to request useful things like:
+
+1. Cat facts
+2. Pokemon facts
+
+To run a demo environment of Coastline with these capabilities you will need the request templates and workflows available in the [demo](./examples/demo) folder.
+
+```bash
+git clone https://github.com/verifa/coastline.git
+
+# Build from source and run coastline
+# TODO: add docs to download and run from binary: https://github.com/verifa/coastline/releases
+# TODO: add docs on running from Docker: https://hub.docker.com/r/verifa/coastline
+make build run
+
+# Go to http://localhost:3000
+# Login (without credentials in dev mode)
+# Explore and enjoy, and don't forget to tell us what you learnt :)
 ```
 
 ## Terminology

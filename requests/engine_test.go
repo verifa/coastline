@@ -61,7 +61,8 @@ func TestRequests(t *testing.T) {
 			if tt.expectErr {
 				assert.Error(t, err)
 			} else {
-				assert.Equal(t, tt.req, *newReq)
+				assert.Equal(t, tt.req.Kind, newReq.Kind)
+				assert.Equal(t, tt.req.Spec, newReq.Spec)
 				assert.NoError(t, err)
 			}
 		})

@@ -13,6 +13,7 @@
 			<tr>
 				<th>Status</th>
 				<th>Request</th>
+				<th>Description</th>
 				<th>Project</th>
 				<th>Service</th>
 				<th />
@@ -28,6 +29,9 @@
 					</td>
 					<td>
 						{request.kind}
+					</td>
+					<td>
+						{request.description}
 					</td>
 					<td>
 						{request.project.name}

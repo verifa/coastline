@@ -1,4 +1,4 @@
-package basic
+package demo
 
 import (
 	"encoding/json"
@@ -7,10 +7,11 @@ import (
 )
 
 request: #CatFact: {
-	kind: "CatFact"
+	kind:        "CatFact"
+	description: "Cat fact max length \(spec.maxLength)"
 	serviceSelector: {
 		matchLabels: {
-			tool: "catfact"
+			tool: "cat-facts"
 		}
 	}
 	spec: {
