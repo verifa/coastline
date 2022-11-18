@@ -27,7 +27,6 @@ workflow: CatFact: {
 	step: api: http.Get & {
 		url: "https://catfact.ninja/fact"
 		request: {
-			body: json.Marshal({})
 			params: {
 				max_length: "\(input.spec.maxLength)"
 			}
