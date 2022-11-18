@@ -1,6 +1,8 @@
 package requests
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -52,10 +54,14 @@ func TestRequests(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.req.Kind, func(t *testing.T) {
-			err := e.Validate(tt.req)
+			var buf bytes.Buffer
+			err := json.NewEncoder(&buf).Encode(tt.req)
+			require.NoError(t, err)
+			newReq, err := e.ValidateRequest(&buf)
 			if tt.expectErr {
 				assert.Error(t, err)
 			} else {
+				assert.Equal(t, tt.req, *newReq)
 				assert.NoError(t, err)
 			}
 		})

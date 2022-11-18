@@ -6,14 +6,11 @@ package basic
 }
 
 // An example request with simple types 1
-#SimpleTypes: {
-	// An example request with simple types 2
+request: #SimpleTypes: {
 	kind: "SimpleTypes"
-	service: {
-		selector: {
-			matchLabels: {
-				tool: "artifactory"
-			}
+	serviceSelector: {
+		matchLabels: {
+			tool: "artifactory"
 		}
 	}
 	spec: {
@@ -51,7 +48,7 @@ package basic
 	}
 }
 
-#ArtifactoryRepoRequest: {
+request: #ArtifactoryRepoRequest: {
 	kind: "ArtifactoryRepoRequest"
 	service: {
 		selector: {

@@ -1,12 +1,10 @@
 package testdata
 
-#T2: {
+request: #t2: {
 	kind: "t2"
-	service: {
-		selector: {
-			matchLabels: {
-				key: "value"
-			}
+	serviceSelector: {
+		matchLabels: {
+			key: "value"
 		}
 	}
 	spec: {
@@ -16,7 +14,7 @@ package testdata
 }
 
 workflow: t2: {
-	input: #T2
+	input: request.#t2
 
 	output: {
 		key: input.spec.num

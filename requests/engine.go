@@ -9,7 +9,6 @@ import (
 	"cuelang.org/go/cue/load"
 	"cuelang.org/go/encoding/gocode/gocodec"
 	"cuelang.org/go/encoding/openapi"
-	"github.com/verifa/coastline/server/oapi"
 )
 
 type Config struct {
@@ -66,18 +65,6 @@ type Engine struct {
 	templates []*Template
 	workflows []cue.Value
 	value     cue.Value
-}
-
-func (e *Engine) Validate(input oapi.NewRequest) error {
-	cueInput := map[string]interface{}{
-		"kind": input.Kind,
-		"spec": input.Spec,
-	}
-	v, err := e.templateByKind(input.Kind)
-	if err != nil {
-		return err
-	}
-	return e.codec.Validate(v, cueInput)
 }
 
 // OpenAPISpec takes a Request Template kind and returns an OpenAPI JSON

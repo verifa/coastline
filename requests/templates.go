@@ -12,21 +12,23 @@ type Template struct {
 	Value cue.Value
 }
 
+type MatchLabels map[string]string
+
+type ServiceSelector struct {
+	MatchLabels MatchLabels `json:"matchLabels"`
+}
+
 // TemplateDef defines the fields of a CUE-based Template for decoding
 // and identifying which definitions in CUE are Request Templates
 type TemplateDef struct {
-	Kind    string `json:"kind"`
-	Service struct {
-		Selector struct {
-			MatchLabels map[string]string `json:"matchLabels"`
-		} `json:"selector"`
-	} `json:"service"`
+	Kind            string          `json:"kind"`
+	ServiceSelector ServiceSelector `json:"serviceSelector"`
 }
 
 func (e *Engine) TemplatesForService(service *oapi.Service) []*Template {
 	var templates []*Template
 	for _, tmpl := range e.templates {
-		for key, reqLabel := range tmpl.Def.Service.Selector.MatchLabels {
+		for key, reqLabel := range tmpl.Def.ServiceSelector.MatchLabels {
 			serviceLabel, ok := service.Labels.Get(key)
 			if ok && serviceLabel == reqLabel {
 				templates = append(templates, tmpl)
@@ -50,18 +52,17 @@ func (e *Engine) templateByKind(kind string) (cue.Value, error) {
 // getTemplates gets the request templates from the parsed cue files
 func getTemplates(value cue.Value) ([]*Template, error) {
 	var templates []*Template
-	iter, err := value.Fields(cue.Definitions(true))
-	if err != nil {
-		return nil, fmt.Errorf("getting fields from cue value: %w", err)
+	tmplPath := cue.ParsePath("request")
+	tmplVal := value.LookupPath(tmplPath)
+	if !tmplVal.Exists() {
+		return nil, fmt.Errorf("no templates found at path: %s", tmplPath)
 	}
-	kindPath := cue.ParsePath("kind")
+	iter, err := tmplVal.Fields(cue.Definitions(true))
+	if err != nil {
+		return nil, fmt.Errorf("getting templates at path: %s: %w", tmplPath, err)
+	}
 	for iter.Next() {
 		val := iter.Value()
-		// Get the type value
-		value := val.LookupPath(kindPath)
-		if !value.Exists() {
-			continue
-		}
 		var def TemplateDef
 		if err := val.Decode(&def); err != nil {
 			// Ignore errors, for now, and continue

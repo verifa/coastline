@@ -1,12 +1,10 @@
 package basic
 
-#JenkinsServerRequest: {
+request: #JenkinsServerRequest: {
 	kind: "JenkinsServerRequest"
-	service: {
-		selector: {
-			matchLabels: {
-				tool: "artifactory"
-			}
+	serviceSelector: {
+		matchLabels: {
+			tool: "artifactory"
 		}
 	}
 	spec: {
@@ -16,7 +14,7 @@ package basic
 }
 
 workflow: jenkinsServer: {
-	input: #JenkinsServerRequest
+	input: request.#JenkinsServerRequest
 
 	output: {
 		server: "awesome-jenkins-server-\(input.spec.name)"

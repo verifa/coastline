@@ -2,7 +2,7 @@ package basic
 
 import "tool/http"
 
-#ExampleRequest: {
+request: #ExampleRequest: {
 	kind: "ExampleRequest"
 	spec: {
 		name: =~"^[A-Za-z0-9-]+$"
@@ -10,7 +10,7 @@ import "tool/http"
 }
 
 workflow: example: {
-	input: #ExampleRequest
+	input: request.#ExampleRequest
 
 	step: restAPI: http.Get & {
 		url: "<url>"

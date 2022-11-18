@@ -6,13 +6,11 @@ import (
 	"github.com/verifa/coastline/tasks/http"
 )
 
-#T1: {
+request: #t1: {
 	kind: "t1"
-	service: {
-		selector: {
-			matchLabels: {
-				tool: "t1"
-			}
+	serviceSelector: {
+		matchLabels: {
+			tool: "t1"
 		}
 	}
 	spec: {
@@ -22,7 +20,7 @@ import (
 }
 
 workflow: t1: {
-	input: #T1
+	input: request.#t1
 
 	step: api: http.Get & {
 		url: "https://catfact.ninja/fact"

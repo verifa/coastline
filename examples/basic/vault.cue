@@ -1,12 +1,10 @@
 package basic
 
-#VaultAdminAccess: {
+request: #VaultAdminAccess: {
 	kind: "VaultAdminAccess"
-	service: {
-		selector: {
-			matchLabels: {
-				tool: "vault"
-			}
+	serviceSelector: {
+		matchLabels: {
+			tool: "vault"
 		}
 	}
 
@@ -19,7 +17,7 @@ package basic
 }
 
 workflow: vaultAdminAccess: {
-	input: #VaultAdminAccess
+	input: request.#VaultAdminAccess
 
 	step: login: {
 		token: input.spec.path + "/" + input.spec.role
