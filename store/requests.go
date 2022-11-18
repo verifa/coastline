@@ -40,8 +40,14 @@ func (s *Store) CreateRequest(user *oapi.User, req *oapi.NewRequest) (*oapi.Requ
 		return nil, fmt.Errorf("getting user: %w", err)
 	}
 
+	var descr string
+	if req.Description != nil {
+		descr = *req.Description
+	}
+
 	dbRequest, err := s.client.Request.Create().
 		SetKind(req.Kind).
+		SetDescription(descr).
 		SetProjectID(req.ProjectId).
 		SetServiceID(req.ServiceId).
 		SetSpec(req.Spec).
@@ -130,12 +136,13 @@ func (s *Store) HandleUpdatedRequest(m *ent.RequestMutation) error {
 
 func dbRequestToAPI(dbRequest *ent.Request) *oapi.Request {
 	request := oapi.Request{
-		Id:       dbRequest.ID,
-		Kind:     dbRequest.Kind,
-		Status:   oapi.RequestStatus(dbRequest.Status),
-		Spec:     dbRequest.Spec,
-		Triggers: make([]oapi.Trigger, len(dbRequest.Edges.Triggers)),
-		Reviews:  make([]oapi.Review, len(dbRequest.Edges.Reviews)),
+		Id:          dbRequest.ID,
+		Kind:        dbRequest.Kind,
+		Description: dbRequest.Description,
+		Status:      oapi.RequestStatus(dbRequest.Status),
+		Spec:        dbRequest.Spec,
+		Triggers:    make([]oapi.Trigger, len(dbRequest.Edges.Triggers)),
+		Reviews:     make([]oapi.Review, len(dbRequest.Edges.Reviews)),
 	}
 	if dbRequest.Edges.Project != nil {
 		request.Project = *dbProjectToAPI(dbRequest.Edges.Project)

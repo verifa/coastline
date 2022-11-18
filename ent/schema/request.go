@@ -20,6 +20,7 @@ func (Request) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).
 			Default(uuid.New),
 		field.String("kind").NotEmpty(),
+		field.String("description").NotEmpty(),
 		field.Enum("status").Values("pending_approval", "rejected", "approved").Default("pending_approval"),
 		field.JSON("spec", RequestSpec{}),
 	}

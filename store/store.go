@@ -8,16 +8,11 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/verifa/coastline/ent"
 	"github.com/verifa/coastline/ent/hook"
-	"github.com/verifa/coastline/server/oapi"
 
 	_ "github.com/xiaoqidun/entps"
 )
 
 type Config struct {
-	// InitData specifies whether to load the database with dummy data or not.
-	// It is intended for demoing purposes and should be ignored in production
-	InitData bool
-
 	// SkipHook registers store hooks if enabled. This is for testing purposes.
 	SkipHooks bool
 	// SkipNATS connects to NATS if enabled. This is for testing purposes.
@@ -69,13 +64,6 @@ func New(ctx context.Context, config *Config) (*Store, error) {
 		// Setup hooks
 		s.RegisterHooks()
 	}
-
-	if config.InitData {
-		if err := s.init(); err != nil {
-			return nil, fmt.Errorf("initializing database: %w", err)
-		}
-	}
-
 	return &s, nil
 }
 
@@ -121,72 +109,4 @@ func (s *Store) RegisterHooks() {
 			return value, nil
 		})
 	})
-}
-
-// init populates the database with some initial data
-func (s *Store) init() error {
-
-	dummyUser := oapi.User{
-		Sub:  "dummy",
-		Iss:  "dummy",
-		Name: "dummy",
-	}
-	// TODO: this is really hacky as it doesn't check if the data already exists
-	// so if using persistent data it will fail...
-	_, err := s.createUpdateUser(&dummyUser)
-	if err != nil {
-		return fmt.Errorf("creating user: %w", err)
-	}
-	project, err := s.CreateProject(&oapi.NewProject{
-		Name: "dummy-project",
-	})
-	if err != nil {
-		return fmt.Errorf("creating project: %w", err)
-	}
-	service, err := s.CreateService(&oapi.NewService{
-		Name: "dummy-service",
-		Labels: &oapi.NewService_Labels{
-			AdditionalProperties: map[string]string{
-				"tool": "artifactory",
-			},
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("creating service: %w", err)
-	}
-	{
-		requests := []*oapi.NewRequest{
-			{
-				ProjectId: project.Id,
-				ServiceId: service.Id,
-				Kind:      "JenkinsServerRequest",
-				Spec: map[string]interface{}{
-					"name": "server-1",
-				},
-			},
-			{
-				ProjectId: project.Id,
-				ServiceId: service.Id,
-				Kind:      "JenkinsServerRequest",
-				Spec: map[string]interface{}{
-					"name": "server-2",
-				},
-			},
-			{
-				ProjectId: project.Id,
-				ServiceId: service.Id,
-				Kind:      "JenkinsServerRequest",
-				Spec: map[string]interface{}{
-					"name": "server-3",
-				},
-			},
-		}
-		for i, req := range requests {
-			if _, err := s.CreateRequest(&dummyUser, req); err != nil {
-				return fmt.Errorf("creating request %d: %w", i, err)
-			}
-		}
-	}
-
-	return nil
 }

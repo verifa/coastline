@@ -1,4 +1,4 @@
-package basic
+package demo
 
 test: CatFact: {
 	run: workflow.CatFact & {

@@ -72,6 +72,13 @@ func New(ctx context.Context, store *store.Store, engine *requests.Engine, confi
 		Handler: &serverImpl,
 	}
 
+	if config.DevMode {
+		err := serverImpl.populateDemoData()
+		if err != nil {
+			return nil, fmt.Errorf("populating dev data: %w", err)
+		}
+	}
+
 	// The handler produced by oapi-codegen is not very helpful when wanting to
 	// implement authentication and authorization by middleware.
 	// Instead of using all of oapi-codegen and hacking around it, it is easier

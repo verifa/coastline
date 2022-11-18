@@ -10,7 +10,7 @@ import (
 	"github.com/verifa/coastline/server/oapi"
 )
 
-func TestCreateRequest(t *testing.T) {
+func TestValidateRequest(t *testing.T) {
 	config := Config{
 		Dir: "./testdata",
 	}
@@ -43,14 +43,16 @@ func TestCreateRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.input.Kind, func(t *testing.T) {
-			b, err := json.Marshal(tt.input)
+			var buf bytes.Buffer
+			err := json.NewEncoder(&buf).Encode(tt.input)
 			require.NoError(t, err)
-			req, err := e.ValidateRequest(bytes.NewBuffer(b))
+			req, err := e.ValidateRequest(&buf)
 			if tt.expectErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, &tt.input, req)
+				assert.Equal(t, tt.input.Kind, req.Kind)
+				assert.Equal(t, tt.input.Spec, req.Spec)
 			}
 		})
 	}
