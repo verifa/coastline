@@ -72,7 +72,7 @@
 
 		<ul>
 			{#each $requestStore.data.requests as request}
-				<li>{request.type} in {request.project?.name}</li>
+				<li>{request.kind} in {request.project?.name}</li>
 			{/each}
 		</ul>
 	{/if}
